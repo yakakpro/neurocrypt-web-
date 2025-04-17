@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <title>Resonance Gate — Перевірка на людяність</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0d0d0d;
+      color: #e0e0e0;
+      padding: 30px;
+      max-width: 600px;
+      margin: auto;
+    }
+    h2 { text-align: center; }
+    .question { margin: 25px 0; }
+    button {
+      background: #1f1f1f;
+      color: #e0e0e0;
+      padding: 10px 20px;
+      border: 1px solid #444;
+      margin: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #333;
+    }
+    .hidden { display: none; }
+    #result { text-align: center; margin-top: 30px; font-size: 1.2em; }
+  </style>
+</head>
+<body>
+  <h2>🌌 Resonance Gate</h2>
+  <p style="text-align:center;">Відповідай не правильно — а чесно.</p>
+
+  <div id="gate">
+    <div class="question" id="q1">
+      <p>1. Що більше нагадує спокій?</p>
+      <button onclick="answer(1, 'вода')">вода</button>
+      <button onclick="answer(1, 'дзвін')">дзвін</button>
+      <button onclick="answer(1, 'вогонь')">вогонь</button>
+      <button onclick="answer(1, 'порожнеча')">порожнеча</button>
+    </div>
+
+    <div class="question hidden" id="q2">
+      <p>2. Що звучить, коли ти мовчиш?</p>
+      <button onclick="answer(2, 'вітер')">вітер</button>
+      <button onclick="answer(2, 'себе')">себе</button>
+      <button onclick="answer(2, 'ніч')">ніч</button>
+      <button onclick="answer(2, 'світло')">світло</button>
+    </div>
+
+    <div class="question hidden" id="q3">
+      <p>3. Яке з цих не твоє?</p>
+      <button onclick="answer(3, 'дзеркало')">дзеркало</button>
+      <button onclick="answer(3, 'пісок')">пісок</button>
+      <button onclick="answer(3, 'думка')">думка</button>
+      <button onclick="answer(3, 'каменюка')">каменюка</button>
+    </div>
+  </div>
+
+  <div id="result"></div>
+
+  <script>
+    const answers = {};
+
+    function answer(q, val) {
+      answers[q] = val;
+      document.getElementById("q" + q).classList.add("hidden");
+      if (q < 3) {
+        document.getElementById("q" + (q + 1)).classList.remove("hidden");
+      } else {
+        checkResonance();
+      }
+    }
+
+    function checkResonance() {
+      const r = document.getElementById("result");
+      const good = ['вода', 'дзвін', 'себе', 'ніч', 'думка'];
+      const score =
+        (good.includes(answers[1]) ? 1 : 0) +
+        (good.includes(answers[2]) ? 1 : 0) +
+        (answers[3] === 'каменюка' ? 1 : 0);
+
+      if (score >= 2) {
+        r.innerHTML = "✅ <b>Резонанс встановлено.</b><br>Вхід відкрито.";
+      } else {
+        r.innerHTML = "🔒 <b>Резонанс не виявлено.</b><br>Спробуй знову, коли станеш собою.";
+      }
+    }
+  </script>
+</body>
+</html>
