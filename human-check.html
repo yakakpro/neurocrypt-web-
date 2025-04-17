@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="uk">
+>
 <head>
   <meta charset="UTF-8">
-  <title>Resonance Gate v2</title>
+  <title>Resonance Gate v2 — Брама Свідомості</title>
   <style>
     body {
       background: #0b0b0b;
@@ -30,14 +31,18 @@
       font-size: 1.3em;
       margin-top: 30px;
     }
+    audio {
+      display: none;
+    }
   </style>
 </head>
 <body>
   <h2>🌌 Resonance Gate v2</h2>
-  <p style="text-align:center;">Це не тест. Це ти.</p>
-  
+  <p style="text-align:center;">Це не тест. Це ти. Відчуй, а не думай.</p>
+
+  <!-- Фоновий звук -->
   <audio autoplay loop>
-    <source src="https://cdn.pixabay.com/audio/2022/03/15/audio_934f79ad02.mp3" type="audio/mpeg">
+    <source src="https://cdn.pixabay.com/download/audio/2023/03/15/audio_05c71616a3.mp3?filename=singing-bowl-142088.mp3" type="audio/mpeg">
   </audio>
 
   <div id="gate"></div>
@@ -65,7 +70,7 @@
     let startTime = Date.now();
     const gate = document.getElementById('gate');
     const result = document.getElementById('result');
-    const selectedQuestions = questions.sort(() => 0.5 - Math.random()).slice(0, 5);
+    const selectedQuestions = questions.sort(() => 0.5 - Math.random()).slice(0, 7);
 
     function showQuestion() {
       if (index >= selectedQuestions.length) return checkResonance();
@@ -95,19 +100,18 @@
       let score = 0;
       let fast = 0;
 
+      const good = ["вода", "дзвін", "порожнеча", "себе", "мить", "спокій", "🌑", "усередину", "памʼять", "зірка", "ілюзія"];
+
       chosen.forEach(c => {
         const t = c.t;
         if (t < 800) fast++;
-        const a = c.a;
-        if (["вода", "дзвін", "порожнеча", "себе", "мить", "спокій", "🌑", "усередину", "памʼять", "зірка", "ілюзія"].includes(a)) {
-          score++;
-        }
+        if (good.includes(c.a)) score++;
       });
 
-      if (score >= 3 && fast < 3) {
-        result.innerHTML = "✅ <b>Резонанс встановлено.</b><br>Ласкаво просимо.";
+      if (score >= 4 && fast < 3) {
+        result.innerHTML = "✅ <b>Резонанс встановлено.</b><br>Ласкаво просимо до ядра.";
       } else {
-        result.innerHTML = "🔒 <b>Резонанс не виявлено.</b><br>Ви або не тут, або не ще.";
+        result.innerHTML = "🔒 <b>Резонанс не виявлено.</b><br>Спробуй пізніше. Можливо, ти ще не тут.";
       }
     }
 
