@@ -10,11 +10,12 @@
     button { cursor: pointer; }
     .section { border: 1px solid #333; padding: 1rem; margin-bottom: 2rem; }
     .result { font-size: 1.2rem; padding: 1rem; background: #000; margin-top: 1rem; text-align: center; }
+    .history { margin-top: 1rem; background: #0c0c0c; padding: 1rem; border: 1px dashed #444; }
   </style>
 </head>
 <body>
   <h1>🌀 Резонометр</h1>
-  <p>Відчуй фразу. Обери, як вона звучить всередині тебе. Отримай резонанс.</p>
+  <p>Відчуй фразу. Обери, як вона звучить всередині тебе. Отримай резонанс. Збережи, щоб бачити, як змінюєшся.</p>
 
   <div class="section">
     <input id="phrase" placeholder="Фраза або слово для аналізу" />
@@ -44,9 +45,15 @@
 
     <button onclick="analyze()">🎯 Аналізувати резонанс</button>
     <div class="result" id="output"></div>
+    <div class="history" id="historyBox">
+      <h3>📜 Історія Резонансів</h3>
+      <div id="history"></div>
+    </div>
   </div>
 
   <script>
+    const history = [];
+
     function analyze() {
       const phrase = document.getElementById('phrase').value.trim();
       if (!phrase) return alert("🔔 Введи фразу для аналізу");
@@ -73,7 +80,12 @@
         symbol = "🌑";
       }
 
-      document.getElementById('output').innerText = `${symbol} ${message}`;
+      const result = `${symbol} ${message}`;
+      document.getElementById('output').innerText = result;
+
+      const entry = `${new Date().toLocaleString()} — "${phrase}" → ${symbol}`;
+      history.unshift(entry);
+      document.getElementById('history').innerText = history.slice(0, 10).join('\n');
     }
   </script>
 </body>
