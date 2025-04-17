@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🧠 Нейрошифратор ∞</title>
+  <style>
+    body { font-family: monospace; background: #0e0e0e; color: #00ffcc; padding: 2rem; }
+    input, textarea, button, select { background: #111; color: #00ffcc; border: 1px solid #00ffcc; padding: 0.5rem; margin: 0.5rem 0; width: 100%; }
+    button { cursor: pointer; }
+    .section { border: 1px solid #333; padding: 1rem; margin-bottom: 2rem; }
+    .hidden { display: none; }
+    #dropzone { border: 2px dashed #00ffcc; padding: 1rem; text-align: center; margin-bottom: 1rem; }
+    canvas { max-width: 100%; margin-top: 1rem; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+</head>
+<body>
+  <h1>🧠 Нейрошифратор ∞</h1>
+
+  <div class="section">
+    <h2>🔐 Режим</h2>
+    <select id="modeSelect" onchange="toggleMode()">
+      <option value="simple">Базовий</option>
+      <option value="dual">З прикриттям</option>
+      <option value="multi">Багаторівневий сейф</option>
+    </select>
+  </div>
+
+  <div id="simpleSection" class="section">
+    <h2>🔒 Базове шифрування</h2>
+    <input type="text" id="phrase" placeholder="🔑 Нейрофраза" />
+    <input type="text" id="emo" placeholder="🎨 Емо-код (напр. 🔥💧🌕)" />
+    <textarea id="message" rows="4" placeholder="✍ Повідомлення"></textarea>
+    <button onclick="encryptSimple()">Зашифрувати</button>
+    <textarea id="encrypted" rows="3" readonly placeholder="🔐 Зашифровано тут"></textarea>
+  </div>
+
+  <div id="dualSection" class="section hidden">
+    <h2>🎭 З прикриттям</h2>
+    <input type="text" id="realPhrase" placeholder="🔑 Справжня фраза" />
+    <input type="text" id="realEmo" placeholder="🎨 Емо-код" />
+    <textarea id="realMessage" rows="3"></textarea>
+    <input type="text" id="fakePhrase" placeholder="🔑 Фраза прикриття" />
+    <input type="text" id="fakeEmo" placeholder="🎨 Емо-код" />
+    <textarea id="fakeMessage" rows="3"></textarea>
+    <button onclick="encryptDual()">Зашифрувати обидва</button>
+    <button onclick="saveDualVault()">💾 Зберегти Vault</button>
+    <textarea id="dualVault" rows="5" readonly placeholder="🔐 Vault JSON"></textarea>
+  </div>
+
+  <div id="multiSection" class="section hidden">
+    <h2>🌀 Багаторівневий сейф</h2>
+    <div id="layerContainer"></div>
+    <button onclick="addLayer()">➕ Додати шар</button>
+    <button onclick="encryptMulti()">🔐 Зашифрувати всі шари</button>
+    <button onclick="saveMultiVault()">💾 Зберегти Vault</button>
+    <textarea id="multiVault" rows="6" readonly placeholder="📦 JSON-сейф"></textarea>
+  </div>
+
+  <div class="section">
+    <h2>📂 Завантажити Vault</h2>
+    <input type="file" id="vaultLoader" onchange="loadVaultFile(event)" />
+    <div id="dropzone" ondrop="dropVault(event)" ondragover="event.preventDefault()">
+      Перетягни сюди свій .vault.json файл 🧊
+    </div>
+    <label><input type="checkbox" id="autoDelete" /> 🔥 Видалити після розшифрування</label>
+    <h2>🔓 Розшифрувати</h2>
+    <textarea id="inputVault" rows="5" placeholder="📥 Встав JSON-сейф"></textarea>
+    <button onclick="decryptVault()">Розшифрувати</button>
+    <div id="decryptionResult"></div>
+    <h3>📸 Створити QR для Vault</h3>
+    <button onclick="generateQR('dark')">QR 🌒 (темний)</button>
+    <button onclick="generateQR('light')">QR 🌕 (світлий)</button>
+    <button onclick="saveQRAsPNG()">💾 Зберегти QR</button>
+    <canvas id="qrcanvas"></canvas>
+  </div>
+
+  <script>
+    const toggleMode = () => {
+      document.getElementById("simpleSection").classList.add("hidden");
+      document.getElementById("dualSection").classList.add("hidden");
+      document.getElementById("multiSection").classList.add("hidden");
+      const mode = document.getElementById("modeSelect").value;
+      if (mode === "simple") document.getElementById("simpleSection").classList.remove("hidden");
+      if (mode === "dual") document.getElementById("dualSection").classList.remove("hidden");
+      if (mode === "multi") document.getElementById("multiSection").classList.remove("hidden");
+    };
+
+    const getKey = async (phrase, emo) => {
+      const combined = phrase + '::' + emo;
+      const msgUint8 = new TextEncoder().encode(combined);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const base64 = btoa(String.fromCharCode(...hashArray)).replace(/\+/g, '-').replace(/\//g, '_');
+      return base64.substring(0, 32).padEnd(32, '=');
+    };
+
+    const aesEncrypt = async (text, phrase, emo) => {
+      const key = await getKey(phrase, emo);
+      const rawKey = new TextEncoder().encode(key).slice(0, 16);
+      const iv = crypto.getRandomValues(new Uint8Array(16));
+      const cryptoKey = await crypto.subtle.importKey("raw", rawKey, "AES-CBC", false, ["encrypt"]);
+      const encrypted = await crypto.subtle.encrypt({ name: "AES-CBC", iv }, cryptoKey, new TextEncoder().encode(text));
+      return btoa(String.fromCharCode(...iv, ...new Uint8Array(encrypted)));
+    };
+
+    const aesDecrypt = async (data, phrase, emo) => {
+      try {
+        const key = await getKey(phrase, emo);
+        const rawKey = new TextEncoder().encode(key).slice(0, 16);
+        const bytes = Uint8Array.from(atob(data), c => c.charCodeAt(0));
+        const iv = bytes.slice(0, 16);
+        const encrypted = bytes.slice(16);
+        const cryptoKey = await crypto.subtle.importKey("raw", rawKey, "AES-CBC", false, ["decrypt"]);
+        const decrypted = await crypto.subtle.decrypt({ name: "AES-CBC", iv }, cryptoKey, encrypted);
+        return new TextDecoder().decode(decrypted);
+      } catch {
+        return "⛔ Невірний ключ або шифр.";
+      }
+    };
+
+    const encryptSimple = async () => {
+      const phrase = document.getElementById("phrase").value;
+      const emo = document.getElementById("emo").value;
+      const msg = document.getElementById("message").value;
+      const encrypted = await aesEncrypt(msg, phrase, emo);
+      document.getElementById("encrypted").value = encrypted;
+    };
+
+    const encryptDual = async () => {
+      const real = await aesEncrypt(document.getElementById("realMessage").value, document.getElementById("realPhrase").value, document.getElementById("realEmo").value);
+      const fake = await aesEncrypt(document.getElementById("fakeMessage").value, document.getElementById("fakePhrase").value, document.getElementById("fakeEmo").value);
+      const vault = { mode: "dual", real, fake };
+      document.getElementById("dualVault").value = JSON.stringify(vault, null, 2);
+    };
+
+    const saveDualVault = () => {
+      const text = document.getElementById("dualVault").value;
+      downloadFile(text, "vault_dual.json");
+    };
+
+    const addLayer = () => {
+      const container = document.getElementById("layerContainer");
+      const div = document.createElement("div");
+      div.innerHTML = `
+        <input placeholder="🔖 Назва" />
+        <input placeholder="🔑 Фраза" />
+        <input placeholder="🎨 Емо-код" />
+        <textarea placeholder="✍ Повідомлення" rows="3"></textarea>
+        <hr />
+      `;
+      container.appendChild(div);
+    };
+
+    const encryptMulti = async () => {
+      const layers = document.querySelectorAll("#layerContainer > div");
+      const result = [];
+      for (const layer of layers) {
+        const [label, phrase, emo, msg] = layer.querySelectorAll("input, textarea");
+        const token = await aesEncrypt(msg.value, phrase.value, emo.value);
+        result.push({ label: label.value, token });
+      }
+      document.getElementById("multiVault").value = JSON.stringify({ mode: "multi", layers: result }, null, 2);
+    };
+
+    const saveMultiVault = () => {
+      const text = document.getElementById("multiVault").value;
+      downloadFile(text, "vault_multi.json");
+    };
+
+    const decryptVault = async () => {
+      const json = document.getElementById("inputVault").value;
+      const vault = JSON.parse(json);
+      let output = "";
+
+      if (vault.mode === "dual") {
+        const phrase = prompt("🔑 Введи фразу:");
+        const emo = prompt("🎨 Емо-код:");
+        let msg = await aesDecrypt(vault.real, phrase, emo);
+        if (msg.startsWith("⛔")) msg = await aesDecrypt(vault.fake, phrase, emo);
+        output = msg;
+      } else if (vault.mode === "multi") {
+        for (const layer of vault.layers) {
+          output += `\n🔒 ${layer.label}\n`;
+          const phrase = prompt(`Фраза для ${layer.label}`);
+          const emo = prompt(`Емо-код для ${layer.label}`);
+          output += await aesDecrypt(layer.token, phrase, emo) + "\n";
+        }
+      } else {
+        const phrase = prompt("🔑 Фраза:");
+        const emo = prompt("🎨 Емо-код:");
+        output = await aesDecrypt(vault.real || json, phrase, emo);
+      }
+
+      document.getElementById("decryptionResult").innerText = output;
+      if (document.getElementById("autoDelete").checked) {
+        document.getElementById("inputVault").value = "";
+        document.getElementById("vaultLoader").value = "";
+      }
+    };
+
+    const downloadFile = (text, filename) => {
+      const blob = new Blob([text], { type: "application/json" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+    };
+
+    const loadVaultFile = (event) => {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        document.getElementById("inputVault").value = e.target.result;
+      };
+      if (file) reader.readAsText(file);
+    };
+
+    const dropVault = (e) => {
+      e.preventDefault();
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.includes("json")) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          document.getElementById("inputVault").value = ev.target.result;
+        };
+        reader.readAsText(file);
+      }
+    };
+
+    const generateQR = (style) => {
+      const data = document.getElementById("inputVault").value;
+      if (!data) return alert("📭 Спочатку встав JSON Vault!");
+      let parsed;
+      try {
+        parsed = JSON.stringify(JSON.parse(data));
+      } catch {
+        return alert("⚠️ Невірний JSON");
+      }
+      const color = style === 'light' ? { dark: "#000000", light: "#ffffff" } : { dark: "#00ffcc", light: "#0e0e0e" };
+      QRCode.toCanvas(document.getElementById("qrcanvas"), parsed, { width: 256, color });
+    };
+
+    const saveQRAsPNG = () => {
+      const canvas = document.getElementById("qrcanvas");
+      const link = document.createElement("a");
+      link.download = "vault_qr.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    };
+  </script>
+</body>
+</html>
