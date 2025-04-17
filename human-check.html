@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-  <meta charset="UTF-8" />
-  <title>Resonance Gate — Перевірка на людяність</title>
+  <meta charset="UTF-8">
+  <title>Resonance Gate v2</title>
   <style>
     body {
+      background: #0b0b0b;
+      color: #eee;
       font-family: 'Segoe UI', sans-serif;
-      background: #0d0d0d;
-      color: #e0e0e0;
       padding: 30px;
-      max-width: 600px;
+      max-width: 700px;
       margin: auto;
     }
     h2 { text-align: center; }
@@ -25,69 +25,93 @@
     button:hover {
       background: #333;
     }
-    .hidden { display: none; }
-    #result { text-align: center; margin-top: 30px; font-size: 1.2em; }
+    #result {
+      text-align: center;
+      font-size: 1.3em;
+      margin-top: 30px;
+    }
   </style>
 </head>
 <body>
-  <h2>🌌 Resonance Gate</h2>
-  <p style="text-align:center;">Відповідай не правильно — а чесно.</p>
+  <h2>🌌 Resonance Gate v2</h2>
+  <p style="text-align:center;">Це не тест. Це ти.</p>
+  
+  <audio autoplay loop>
+    <source src="https://cdn.pixabay.com/audio/2022/03/15/audio_934f79ad02.mp3" type="audio/mpeg">
+  </audio>
 
-  <div id="gate">
-    <div class="question" id="q1">
-      <p>1. Що більше нагадує спокій?</p>
-      <button onclick="answer(1, 'вода')">вода</button>
-      <button onclick="answer(1, 'дзвін')">дзвін</button>
-      <button onclick="answer(1, 'вогонь')">вогонь</button>
-      <button onclick="answer(1, 'порожнеча')">порожнеча</button>
-    </div>
-
-    <div class="question hidden" id="q2">
-      <p>2. Що звучить, коли ти мовчиш?</p>
-      <button onclick="answer(2, 'вітер')">вітер</button>
-      <button onclick="answer(2, 'себе')">себе</button>
-      <button onclick="answer(2, 'ніч')">ніч</button>
-      <button onclick="answer(2, 'світло')">світло</button>
-    </div>
-
-    <div class="question hidden" id="q3">
-      <p>3. Яке з цих не твоє?</p>
-      <button onclick="answer(3, 'дзеркало')">дзеркало</button>
-      <button onclick="answer(3, 'пісок')">пісок</button>
-      <button onclick="answer(3, 'думка')">думка</button>
-      <button onclick="answer(3, 'каменюка')">каменюка</button>
-    </div>
-  </div>
-
+  <div id="gate"></div>
   <div id="result"></div>
 
   <script>
-    const answers = {};
+    const questions = [
+      { q: "Що більше схоже на спокій?", a: ["вода", "дзвін", "вогонь", "порожнеча"] },
+      { q: "Що звучить, коли ти мовчиш?", a: ["вітер", "світло", "себе", "ніч"] },
+      { q: "Яке з цих не твоє?", a: ["шум", "каменюка", "думка", "пісок"] },
+      { q: "Що не можна втримати?", a: ["мить", "сон", "тінь", "спогад"] },
+      { q: "Що хоче залишитися?", a: ["слово", "мить", "вогонь", "спокій"] },
+      { q: "Який символ зараз ближчий?", a: ["🌊", "🔥", "🌑", "💨"] },
+      { q: "Куди веде ця фраза: «тиха тиша тисне»?", a: ["усередину", "назовні", "вгору", "в нікуди"] },
+      { q: "Що лишається після тебе?", a: ["голос", "сліпота", "коло", "рух"] },
+      { q: "Що не має форми, але тримає?", a: ["памʼять", "дихання", "думка", "сон"] },
+      { q: "Яка з цих — брехня?", a: ["чистота", "швидкість", "контроль", "відсутність"] },
+      { q: "Коли світ згасає, зʼявляється...", a: ["зірка", "я", "порожнеча", "джерело"] },
+      { q: "Що тягне назад?", a: ["сум", "рутина", "час", "вогкість"] },
+      { q: "Що зникає, коли дивишся прямо?", a: ["страх", "тінь", "ілюзія", "вогонь"] }
+    ];
 
-    function answer(q, val) {
-      answers[q] = val;
-      document.getElementById("q" + q).classList.add("hidden");
-      if (q < 3) {
-        document.getElementById("q" + (q + 1)).classList.remove("hidden");
-      } else {
-        checkResonance();
-      }
+    let index = 0;
+    let chosen = [];
+    let startTime = Date.now();
+    const gate = document.getElementById('gate');
+    const result = document.getElementById('result');
+    const selectedQuestions = questions.sort(() => 0.5 - Math.random()).slice(0, 5);
+
+    function showQuestion() {
+      if (index >= selectedQuestions.length) return checkResonance();
+
+      const q = selectedQuestions[index];
+      const div = document.createElement('div');
+      div.className = 'question';
+      div.innerHTML = `<p><b>${index + 1}.</b> ${q.q}</p>`;
+      q.a.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.textContent = opt;
+        btn.onclick = () => {
+          const time = Date.now() - startTime;
+          chosen.push({ q: q.q, a: opt, t: time });
+          index++;
+          gate.innerHTML = '';
+          startTime = Date.now();
+          showQuestion();
+        };
+        div.appendChild(btn);
+      });
+      gate.appendChild(div);
     }
 
     function checkResonance() {
-      const r = document.getElementById("result");
-      const good = ['вода', 'дзвін', 'себе', 'ніч', 'думка'];
-      const score =
-        (good.includes(answers[1]) ? 1 : 0) +
-        (good.includes(answers[2]) ? 1 : 0) +
-        (answers[3] === 'каменюка' ? 1 : 0);
+      gate.innerHTML = '';
+      let score = 0;
+      let fast = 0;
 
-      if (score >= 2) {
-        r.innerHTML = "✅ <b>Резонанс встановлено.</b><br>Вхід відкрито.";
+      chosen.forEach(c => {
+        const t = c.t;
+        if (t < 800) fast++;
+        const a = c.a;
+        if (["вода", "дзвін", "порожнеча", "себе", "мить", "спокій", "🌑", "усередину", "памʼять", "зірка", "ілюзія"].includes(a)) {
+          score++;
+        }
+      });
+
+      if (score >= 3 && fast < 3) {
+        result.innerHTML = "✅ <b>Резонанс встановлено.</b><br>Ласкаво просимо.";
       } else {
-        r.innerHTML = "🔒 <b>Резонанс не виявлено.</b><br>Спробуй знову, коли станеш собою.";
+        result.innerHTML = "🔒 <b>Резонанс не виявлено.</b><br>Ви або не тут, або не ще.";
       }
     }
+
+    showQuestion();
   </script>
 </body>
 </html>
