@@ -11,6 +11,7 @@
     .section { border: 1px solid #333; padding: 1rem; margin-bottom: 2rem; }
     .result { font-size: 1.2rem; padding: 1rem; background: #000; margin-top: 1rem; text-align: center; }
     .history { margin-top: 1rem; background: #0c0c0c; padding: 1rem; border: 1px dashed #444; }
+    canvas { background: #000; display: block; margin: 1rem auto; border: 1px solid #00ffaa; }
   </style>
 </head>
 <body>
@@ -45,6 +46,8 @@
 
     <button onclick="analyze()">🎯 Аналізувати резонанс</button>
     <div class="result" id="output"></div>
+    <canvas id="chart" width="600" height="200"></canvas>
+
     <div class="history" id="historyBox">
       <h3>📜 Історія Резонансів</h3>
       <div id="history"></div>
@@ -53,6 +56,22 @@
 
   <script>
     const history = [];
+    const canvas = document.getElementById("chart");
+    const ctx = canvas.getContext("2d");
+
+    function drawChart() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.beginPath();
+      ctx.moveTo(0, 100);
+      history.forEach((item, i) => {
+        const y = 100 - item.value * 80;
+        const x = (i / Math.max(1, history.length - 1)) * canvas.width;
+        ctx.lineTo(x, y);
+      });
+      ctx.strokeStyle = "#00ffaa";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
 
     function analyze() {
       const phrase = document.getElementById('phrase').value.trim();
@@ -83,9 +102,17 @@
       const result = `${symbol} ${message}`;
       document.getElementById('output').innerText = result;
 
-      const entry = `${new Date().toLocaleString()} — "${phrase}" → ${symbol}`;
+      const entry = {
+        time: new Date().toLocaleString(),
+        phrase,
+        symbol,
+        value: total
+      };
       history.unshift(entry);
-      document.getElementById('history').innerText = history.slice(0, 10).join('\n');
+
+      const html = history.slice(0, 10).map(h => `${h.time} — "${h.phrase}" → ${h.symbol}`).join('\n');
+      document.getElementById('history').innerText = html;
+      drawChart();
     }
   </script>
 </body>
