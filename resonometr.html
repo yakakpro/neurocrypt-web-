@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🌀 Резонометр</title>
+  <style>
+    body { background: #111; color: #00ffaa; font-family: monospace; padding: 2rem; }
+    input, textarea, select, button { width: 100%; margin: 0.5rem 0; padding: 0.6rem; background: #222; color: #00ffaa; border: 1px solid #00ffaa; }
+    button { cursor: pointer; }
+    .section { border: 1px solid #333; padding: 1rem; margin-bottom: 2rem; }
+    .result { font-size: 1.2rem; padding: 1rem; background: #000; margin-top: 1rem; text-align: center; }
+  </style>
+</head>
+<body>
+  <h1>🌀 Резонометр</h1>
+  <p>Відчуй фразу. Обери, як вона звучить всередині тебе. Отримай резонанс.</p>
+
+  <div class="section">
+    <input id="phrase" placeholder="Фраза або слово для аналізу" />
+
+    <label>🔮 Як це відчувається?</label>
+    <select id="feeling">
+      <option value="1">Тепло / Знайоме</option>
+      <option value="0.5">Нейтрально</option>
+      <option value="-0.5">Холодно / Відсторонено</option>
+      <option value="-1">Напружено / Відторгнення</option>
+    </select>
+
+    <label>🌈 Який колір приходить першим?</label>
+    <select id="color">
+      <option value="1">Світлий / Ясний</option>
+      <option value="0.5">Теплий / Рухомий</option>
+      <option value="-0.5">Темний / Сірий</option>
+      <option value="-1">Густий / Безкольоровий</option>
+    </select>
+
+    <label>🌬️ Чи хочеться повторити фразу вголос?</label>
+    <select id="echo">
+      <option value="1">Так, лунає легко</option>
+      <option value="0">Мені байдуже</option>
+      <option value="-1">Ні, щось заважає</option>
+    </select>
+
+    <button onclick="analyze()">🎯 Аналізувати резонанс</button>
+    <div class="result" id="output"></div>
+  </div>
+
+  <script>
+    function analyze() {
+      const phrase = document.getElementById('phrase').value.trim();
+      if (!phrase) return alert("🔔 Введи фразу для аналізу");
+
+      const feeling = parseFloat(document.getElementById('feeling').value);
+      const color = parseFloat(document.getElementById('color').value);
+      const echo = parseFloat(document.getElementById('echo').value);
+
+      const total = (feeling + color + echo) / 3;
+      let message = "";
+      let symbol = "";
+
+      if (total >= 0.7) {
+        message = "🔓 Повний резонанс: дія буде природною";
+        symbol = "🌕";
+      } else if (total >= 0.3) {
+        message = "🌗 Частковий резонанс: можливо, ще не час";
+        symbol = "🌓";
+      } else if (total >= 0) {
+        message = "🌘 Слабкий резонанс: перевір свою інтуїцію";
+        symbol = "🌒";
+      } else {
+        message = "🌑 Не резонує. Уникай або перетвори";
+        symbol = "🌑";
+      }
+
+      document.getElementById('output').innerText = `${symbol} ${message}`;
+    }
+  </script>
+</body>
+</html>
