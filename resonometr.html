@@ -2,117 +2,128 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🌀 Резонометр</title>
+  <title>Резонометр ∞</title>
   <style>
-    body { background: #111; color: #00ffaa; font-family: monospace; padding: 2rem; }
-    input, textarea, select, button { width: 100%; margin: 0.5rem 0; padding: 0.6rem; background: #222; color: #00ffaa; border: 1px solid #00ffaa; }
-    button { cursor: pointer; }
-    .section { border: 1px solid #333; padding: 1rem; margin-bottom: 2rem; }
-    .result { font-size: 1.2rem; padding: 1rem; background: #000; margin-top: 1rem; text-align: center; }
-    .history { margin-top: 1rem; background: #0c0c0c; padding: 1rem; border: 1px dashed #444; }
-    canvas { background: #000; display: block; margin: 1rem auto; border: 1px solid #00ffaa; }
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: #0e0e0e;
+      color: #e0e0e0;
+      padding: 20px;
+    }
+    input, select, button, textarea {
+      background: #1a1a1a;
+      color: #e0e0e0;
+      border: 1px solid #444;
+      padding: 8px;
+      margin: 5px 0;
+      width: 100%;
+    }
+    canvas { background: #fff; margin-top: 20px; }
   </style>
 </head>
 <body>
-  <h1>🌀 Резонометр</h1>
-  <p>Відчуй фразу. Обери, як вона звучить всередині тебе. Отримай резонанс. Збережи, щоб бачити, як змінюєшся.</p>
+  <h2>🌌 Резонометр v2</h2>
+  <label>🧠 Введи фразу:</label>
+  <input id="phraseInput" placeholder="слово, фраза або думка" />
 
-  <div class="section">
-    <input id="phrase" placeholder="Фраза або слово для аналізу" />
+  <label>🎨 Який колір перший спадає на думку?</label>
+  <select id="colorSelect">
+    <option value="теплий">Теплий</option>
+    <option value="холодний">Холодний</option>
+    <option value="сірий">Сірий</option>
+    <option value="яскравий">Яскравий</option>
+  </select>
 
-    <label>🔮 Як це відчувається?</label>
-    <select id="feeling">
-      <option value="1">Тепло / Знайоме</option>
-      <option value="0.5">Нейтрально</option>
-      <option value="-0.5">Холодно / Відсторонено</option>
-      <option value="-1">Напружено / Відторгнення</option>
-    </select>
+  <label>🌫 Як вона відчувається?</label>
+  <select id="feelSelect">
+    <option value="легкість">Легкість</option>
+    <option value="напруга">Напруга</option>
+    <option value="порожнеча">Порожнеча</option>
+    <option value="внутрішній дзвін">Внутрішній дзвін</option>
+  </select>
 
-    <label>🌈 Який колір приходить першим?</label>
-    <select id="color">
-      <option value="1">Світлий / Ясний</option>
-      <option value="0.5">Теплий / Рухомий</option>
-      <option value="-0.5">Темний / Сірий</option>
-      <option value="-1">Густий / Безкольоровий</option>
-    </select>
+  <label>♻️ Хочеш її повторити?</label>
+  <select id="repeatSelect">
+    <option value="так">Так</option>
+    <option value="ні">Ні</option>
+    <option value="не знаю">Не знаю</option>
+  </select>
 
-    <label>🌬️ Чи хочеться повторити фразу вголос?</label>
-    <select id="echo">
-      <option value="1">Так, лунає легко</option>
-      <option value="0">Мені байдуже</option>
-      <option value="-1">Ні, щось заважає</option>
-    </select>
+  <button onclick="analyze()">🎯 Аналізувати резонанс</button>
 
-    <button onclick="analyze()">🎯 Аналізувати резонанс</button>
-    <div class="result" id="output"></div>
-    <canvas id="chart" width="600" height="200"></canvas>
+  <div id="result" style="margin-top: 15px;"></div>
 
-    <div class="history" id="historyBox">
-      <h3>📜 Історія Резонансів</h3>
-      <div id="history"></div>
-    </div>
-  </div>
+  <h3>📈 Історія</h3>
+  <ul id="history"></ul>
+
+  <button onclick="exportVault()">💾 Export to Vault</button>
+  <pre id="vaultOutput" style="white-space: pre-wrap; margin-top: 10px;"></pre>
+
+  <canvas id="chart" width="400" height="200"></canvas>
 
   <script>
-    const history = [];
-    const canvas = document.getElementById("chart");
-    const ctx = canvas.getContext("2d");
+    let historyData = [];
+
+    function analyze() {
+      const phrase = document.getElementById('phraseInput').value;
+      const color = document.getElementById('colorSelect').value;
+      const feel = document.getElementById('feelSelect').value;
+      const repeat = document.getElementById('repeatSelect').value;
+
+      let score = 0;
+      if (color === "теплий" || color === "яскравий") score += 1;
+      if (feel === "внутрішній дзвін") score += 1;
+      if (repeat === "так") score += 1;
+
+      let res = "🌑 Відсутність резонансу";
+      if (score === 1) res = "🌗 Частковий резонанс";
+      if (score >= 2) res = "🌕 Повний резонанс";
+
+      const now = new Date().toLocaleTimeString();
+      const record = { phrase, color, feel, repeat, score, res, time: now };
+      historyData.push(record);
+
+      document.getElementById('result').innerHTML = `<b>${res}</b><br><i>${phrase}</i> (${now})`;
+
+      updateHistory();
+      drawChart();
+    }
+
+    function updateHistory() {
+      const list = document.getElementById('history');
+      list.innerHTML = "";
+      historyData.slice(-10).reverse().forEach(r => {
+        const li = document.createElement('li');
+        li.textContent = `[${r.time}] ${r.phrase} — ${r.res}`;
+        list.appendChild(li);
+      });
+    }
 
     function drawChart() {
+      const canvas = document.getElementById("chart");
+      const ctx = canvas.getContext("2d");
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.beginPath();
-      ctx.moveTo(0, 100);
-      history.forEach((item, i) => {
-        const y = 100 - item.value * 80;
-        const x = (i / Math.max(1, history.length - 1)) * canvas.width;
-        ctx.lineTo(x, y);
-      });
-      ctx.strokeStyle = "#00ffaa";
+      ctx.strokeStyle = "#00ffff";
       ctx.lineWidth = 2;
+
+      let step = canvas.width / Math.max(1, historyData.length - 1);
+      historyData.forEach((r, i) => {
+        const x = i * step;
+        const y = canvas.height - (r.score / 3) * canvas.height;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
       ctx.stroke();
     }
 
-    function analyze() {
-      const phrase = document.getElementById('phrase').value.trim();
-      if (!phrase) return alert("🔔 Введи фразу для аналізу");
-
-      const feeling = parseFloat(document.getElementById('feeling').value);
-      const color = parseFloat(document.getElementById('color').value);
-      const echo = parseFloat(document.getElementById('echo').value);
-
-      const total = (feeling + color + echo) / 3;
-      let message = "";
-      let symbol = "";
-
-      if (total >= 0.7) {
-        message = "🔓 Повний резонанс: дія буде природною";
-        symbol = "🌕";
-      } else if (total >= 0.3) {
-        message = "🌗 Частковий резонанс: можливо, ще не час";
-        symbol = "🌓";
-      } else if (total >= 0) {
-        message = "🌘 Слабкий резонанс: перевір свою інтуїцію";
-        symbol = "🌒";
-      } else {
-        message = "🌑 Не резонує. Уникай або перетвори";
-        symbol = "🌑";
-      }
-
-      const result = `${symbol} ${message}`;
-      document.getElementById('output').innerText = result;
-
-      const entry = {
-        time: new Date().toLocaleString(),
-        phrase,
-        symbol,
-        value: total
+    function exportVault() {
+      const vault = {
+        type: "resonometer",
+        entries: historyData
       };
-      history.unshift(entry);
-
-      const html = history.slice(0, 10).map(h => `${h.time} — "${h.phrase}" → ${h.symbol}`).join('\n');
-      document.getElementById('history').innerText = html;
-      drawChart();
+      const output = JSON.stringify(vault, null, 2);
+      document.getElementById("vaultOutput").textContent = output;
     }
   </script>
 </body>
