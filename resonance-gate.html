@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>Resonance Gate</title>
+  <style>
+    body {
+      background: #0d0d0d;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 30px;
+      max-width: 700px;
+      margin: auto;
+    }
+    h2 { text-align: center; }
+    .question { margin: 25px 0; }
+    button {
+      background: #1a1a1a;
+      color: #e0e0e0;
+      padding: 10px 20px;
+      border: 1px solid #444;
+      margin: 5px;
+      cursor: pointer;
+    }
+    button:hover { background: #333; }
+    #result { text-align: center; font-size: 1.2em; margin-top: 30px; }
+    pre {
+      background: #111;
+      padding: 10px;
+      overflow-x: auto;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h2>🌌 Resonance Gate</h2>
+  <p style="text-align:center;">Це не перевірка. Це дзеркало.</p>
+
+  <div id="gate"></div>
+  <div id="result"></div>
+  <pre id="export" style="display:none;"></pre>
+  <button id="download" style="display:none;" onclick="downloadJSON()">💾 Зберегти резогліф</button>
+
+  <script>
+    const questions = [
+      { q: "Що більше схоже на спокій?", a: ["вода", "дзвін", "вогонь", "порожнеча"] },
+      { q: "Що звучить, коли ти мовчиш?", a: ["вітер", "світло", "себе", "ніч"] },
+      { q: "Яке з цих не твоє?", a: ["шум", "каменюка", "думка", "пісок"] },
+      { q: "Що не можна втримати?", a: ["мить", "сон", "тінь", "спогад"] },
+      { q: "Що хоче залишитися?", a: ["слово", "мить", "вогонь", "спокій"] },
+      { q: "Який символ зараз ближчий?", a: ["🌊", "🔥", "🌑", "💨"] },
+      { q: "Куди веде ця фраза: «тиха тиша тисне»?", a: ["усередину", "назовні", "вгору", "в нікуди"] },
+      { q: "Що лишається після тебе?", a: ["голос", "сліпота", "коло", "рух"] },
+      { q: "Що не має форми, але тримає?", a: ["памʼять", "дихання", "думка", "сон"] },
+      { q: "Коли світ згасає, зʼявляється...", a: ["зірка", "я", "порожнеча", "джерело"] },
+      { q: "Що зникає, коли дивишся прямо?", a: ["страх", "тінь", "ілюзія", "вогонь"] }
+    ];
+
+    const good = ["вода", "дзвін", "порожнеча", "себе", "мить", "спокій", "🌑", "усередину", "памʼять", "зірка", "ілюзія"];
+
+    const gate = document.getElementById("gate");
+    const result = document.getElementById("result");
+    const exportBox = document.getElementById("export");
+    const downloadBtn = document.getElementById("download");
+
+    let index = 0;
+    let answers = [];
+    let glyph = [];
+    let startTime = Date.now();
+
+    const selected = questions.sort(() => 0.5 - Math.random()).slice(0, 7);
+
+    function showQuestion() {
+      if (index >= selected.length) return evaluate();
+
+      const q = selected[index];
+      const div = document.createElement("div");
+      div.className = "question";
+      div.innerHTML = `<p><b>${index + 1}.</b> ${q.q}</p>`;
+      q.a.forEach(opt => {
+        const btn = document.createElement("button");
+        btn.textContent = opt;
+        btn.onclick = () => {
+          const time = Date.now() - startTime;
+          answers.push({ a: opt, t: time });
+          glyph.push(opt);
+          index++;
+          gate.innerHTML = '';
+          startTime = Date.now();
+          showQuestion();
+        };
+        div.appendChild(btn);
+      });
+      gate.appendChild(div);
+    }
+
+    function evaluate() {
+      gate.innerHTML = '';
+      let score = 0;
+      let fast = 0;
+      answers.forEach(x => {
+        if (x.t < 800) fast++;
+        if (good.includes(x.a)) score++;
+      });
+
+      let state = "", emoji = "", msg = "";
+      if (score >= 5 && fast < 3) {
+        state = "🌕 Повний резонанс";
+        msg = "Ти на частоті. Вітаю.";
+      } else if (score >= 3) {
+        state = "🌗 Коливання";
+        msg = "Ти близько, але щось ще шукає себе.";
+      } else {
+        state = "🌑 Несумісність";
+        msg = "Твоя хвиля ще не збіглась.";
+      }
+
+      result.innerHTML = `<b>${state}</b><br><br>🧬 Твій резогліф: <i>${glyph.join(" + ")}</i><br>🌀 ${msg}`;
+      const payload = {
+        glyph,
+        timestamp: new Date().toISOString(),
+        resonance: state
+      };
+      exportBox.style.display = "block";
+      exportBox.textContent = JSON.stringify(payload, null, 2);
+      downloadBtn.style.display = "inline-block";
+    }
+
+    function downloadJSON() {
+      const blob = new Blob([exportBox.textContent], {type: "application/json"});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "resoglyph.json";
+      a.click();
+    }
+
+    showQuestion();
+  </script>
+</body>
+</html>
