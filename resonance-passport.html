@@ -41,7 +41,7 @@
 </head>
 <body>
   <h2>🪪 Створити Резонанс-Паспорт</h2>
-  <p style="text-align:center;">Завантаж резогліф з капчі — і отримаєш ID, візуальний код, фразу-відлуння.</p>
+  <p style="text-align:center;">Завантаж резогліф або виконай ритуал автоматично.</p>
 
   <input type="file" accept=".json" onchange="loadGlyph(event)">
   <canvas id="viz" width="200" height="200"></canvas>
@@ -57,6 +57,9 @@
       "Ти дихаєш крізь простір.",
       "Світло знає тебе навіть у темряві."
     ];
+
+    const ritualMode = localStorage.getItem("ritualMode") === "true";
+    const savedGlyph = localStorage.getItem("resoglyph");
 
     function hashGlyph(glyph) {
       return btoa(glyph.join('-')).slice(0, 24);
@@ -78,27 +81,37 @@
       }
     }
 
+    function generatePassport(glyph) {
+      const id = hashGlyph(glyph);
+      const echo = echoPhrases[Math.floor(Math.random() * echoPhrases.length)];
+      const passport = {
+        id,
+        glyph,
+        date: new Date().toISOString(),
+        echo
+      };
+      document.getElementById("info").innerHTML = `
+        <p>🧬 <b>Гліф:</b> ${glyph.join(' + ')}</p>
+        <p>🧩 <b>ID:</b> ${id}</p>
+        <p>🪞 <b>Відлуння:</b> <i>“${echo}”</i></p>
+      `;
+      document.getElementById("passportData").textContent = JSON.stringify(passport, null, 2);
+      document.getElementById("saveBtn").style.display = "block";
+      drawViz(id);
+
+      if (ritualMode) {
+        setTimeout(() => {
+          window.open("resonance-verify.html", "_blank");
+        }, 3000);
+      }
+    }
+
     function loadGlyph(e) {
       const reader = new FileReader();
       reader.onload = function () {
         const data = JSON.parse(reader.result);
         const glyph = data.glyph || [];
-        const id = hashGlyph(glyph);
-        const echo = echoPhrases[Math.floor(Math.random() * echoPhrases.length)];
-        const passport = {
-          id,
-          glyph,
-          date: new Date().toISOString(),
-          echo
-        };
-        document.getElementById("info").innerHTML = `
-          <p>🧬 <b>Гліф:</b> ${glyph.join(' + ')}</p>
-          <p>🧩 <b>ID:</b> ${id}</p>
-          <p>🪞 <b>Відлуння:</b> <i>“${echo}”</i></p>
-        `;
-        document.getElementById("passportData").textContent = JSON.stringify(passport, null, 2);
-        document.getElementById("saveBtn").style.display = "block";
-        drawViz(id);
+        generatePassport(glyph);
       };
       reader.readAsText(e.target.files[0]);
     }
@@ -110,6 +123,16 @@
       a.href = URL.createObjectURL(blob);
       a.download = "resonance-passport.json";
       a.click();
+    }
+
+    // автозапуск ритуального гліфа з localStorage
+    if (ritualMode && savedGlyph) {
+      try {
+        const parsed = JSON.parse(savedGlyph);
+        if (parsed.glyph) generatePassport(parsed.glyph);
+      } catch (e) {
+        console.warn("Неможливо зчитати resoglyph");
+      }
     }
   </script>
 </body>
