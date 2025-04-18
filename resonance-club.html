@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>🌐 Клуб Резонансників</title>
+  <style>
+    body {
+      background: #0c0c0c;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      padding: 50px 30px;
+      max-width: 800px;
+      margin: auto;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    #matrix {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.1;
+      z-index: -1;
+    }
+    h1 {
+      font-size: 2em;
+      margin-bottom: 30px;
+      animation: glitch 3s infinite;
+    }
+    canvas {
+      display: block;
+      margin: 20px auto;
+      border: 1px solid #555;
+      background: #000;
+      animation: pulse 6s infinite;
+    }
+    button, input[type="file"] {
+      background: #1a1a1a;
+      color: #eee;
+      padding: 15px 25px;
+      border: 1px solid #444;
+      margin: 15px;
+      cursor: pointer;
+      font-size: 1em;
+      width: 80%;
+      animation: glitch 5s infinite;
+    }
+    button:hover, input[type="file"]:hover {
+      background: #333;
+      transform: scale(1.05);
+    }
+    #network {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 1.2em;
+      animation: glitch 5s infinite;
+    }
+    pre {
+      background: #111;
+      padding: 10px;
+      overflow-x: auto;
+      margin-top: 20px;
+    }
+    footer {
+      margin-top: 60px;
+      font-size: 0.8em;
+      color: #555;
+      animation: glitch 5s infinite;
+    }
+    @keyframes glitch {
+      0% { transform: translate(0); opacity: 1; }
+      2% { transform: translate(1px, 1px); opacity: 0.95; }
+      4% { transform: translate(-1px, -1px); opacity: 0.95; }
+      6% { transform: translate(0); opacity: 1; }
+      100% { transform: translate(0); opacity: 1; }
+    }
+    @keyframes pulse {
+      0% { filter: brightness(1); }
+      50% { filter: brightness(1.5); }
+      100% { filter: brightness(1); }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="matrix"></canvas>
+  <h1>🌐 Клуб Резонансників</h1>
+  <p>Об’єднай свій гліф із мережею резонансників!</p>
+
+  <input type="file" accept=".json" onchange="loadPassport(event)">
+  <button onclick="registerGlyph()">🧬 Зареєструвати гліф</button>
+  <canvas id="network-viz" width="400" height="400"></canvas>
+  <div id="network"></div>
+  <pre id="network-data" style="display:none;"></pre>
+  <button id="saveNetwork" onclick="saveNetwork()" style="display:none;">💾 Зберегти мережу</button>
+
+  <footer>created with 💠 by Ти & Резонанс</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/kyber-js@0.2.0/dist/kyber.min.js"></script>
+  <script>
+    // Matrix rain
+    const matrixCanvas = document.getElementById("matrix");
+    const ctx = matrixCanvas.getContext("2d");
+    matrixCanvas.height = window.innerHeight;
+    matrixCanvas.width = window.innerWidth;
+    const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ🌀";
+    const fontSize = 10;
+    const columns = matrixCanvas.width / fontSize;
+    const drops = Array(Math.floor(columns)).fill(1);
+    function drawMatrix() {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+      ctx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
+      ctx.fillStyle = "#0ff";
+      ctx.font = `${fontSize}px monospace`;
+      drops.forEach((y, i) => {
+        const text = chars.charAt(Math.floor(Math.random() * chars.length));
+        const x = i * fontSize;
+        ctx.fillText(text, x, y * fontSize);
+        if (y * fontSize > matrixCanvas.height && Math.random() > 0.975) drops[i] = 0;
+        drops[i]++;
+      });
+    }
+    setInterval(drawMatrix, 50);
+
+    // Network visualization
+    const networkCanvas = document.getElementById("network-viz");
+    const nCtx = networkCanvas.getContext("2d");
+    let nodes = JSON.parse(localStorage.getItem("resonanceNetwork")) || [];
+    function drawNetwork() {
+      nCtx.clearRect(0, 0, networkCanvas.width, networkCanvas.height);
+      nodes.forEach((node, i) => {
+        const angle = (i / nodes.length) * 2 * Math.PI;
+        const x = 200 + Math.cos(angle) * 100;
+        const y = 200 + Math.sin(angle) * 100;
+        const gradient = nCtx.createRadialGradient(x, y, 0, x, y, 10);
+        gradient.addColorStop(0, "#0ff");
+        gradient.addColorStop(1, "#f0f");
+        nCtx.fillStyle = gradient;
+        nCtx.beginPath();
+        nCtx.arc(x, y, 10, 0, 2 * Math.PI);
+        nCtx.fill();
+        if (i > 0) {
+          const prevAngle = ((i - 1) / nodes.length) * 2 * Math.PI;
+          const prevX = 200 + Math.cos(prevAngle) * 100;
+          const prevY = 200 + Math.sin(prevAngle) * 100;
+          nCtx.strokeStyle = "#0ff";
+          nCtx.beginPath();
+          nCtx.moveTo(prevX, prevY);
+          nCtx.lineTo(x, y);
+          nCtx.stroke();
+        }
+      });
+    }
+    setInterval(drawNetwork, 50);
+
+    async function verifySignature(data, signature) {
+      const encoder = new TextEncoder();
+      const computed = btoa(String.fromCharCode(...encoder.encode(data))).slice(0, 32);
+      return computed === signature;
+    }
+
+    async function loadPassport(e) {
+      const reader = new FileReader();
+      reader.onload = async function () {
+        try {
+          const data = JSON.parse(reader.result);
+          if (!data.encrypted || !data.signature) {
+            throw new Error("Некоректний паспорт.");
+          }
+          const isValid = await verifySignature(data.encrypted, data.signature);
+          if (!isValid) {
+            throw new Error("Підпис невалідний.");
+          }
+          passport = data;
+        } catch (e) {
+          alert("Помилка при завантаженні паспорта: " + e.message);
+        }
+      };
+      reader.readAsText(e.target.files[0]);
+    }
+
+    async function registerGlyph() {
+      if (!passport) {
+        alert("Спочатку завантаж паспорт!");
+        return;
+      }
+      try {
+        const glyph = passport.glyph || (passport.encrypted ? JSON.parse(atob(passport.encrypted)).glyph : []);
+        if (!glyph.length) {
+          throw new Error("Гліф порожній або некоректний.");
+        }
+        const id = btoa(glyph.join('-')).slice(0, 24);
+        nodes.push({ id, glyph });
+        localStorage.setItem("resonanceNetwork", JSON.stringify(nodes));
+        document.getElementById("network").innerHTML = `✅ Гліф зареєстровано!<br>Вузлів у мережі: ${nodes.length}`;
+        document.getElementById("network-data").textContent = JSON.stringify(nodes, null, 2);
+        document.getElementById("network-data").style.display = "block";
+        document.getElementById("saveNetwork").style.display = "block";
+      } catch (e) {
+        alert("Помилка реєстрації гліфа: " + e.message);
+      }
+    }
+
+    function saveNetwork() {
+      if (!blobCache) {
+        blobCache = new Blob([JSON.stringify(nodes, null, 2)], {type: "application/json"});
+      }
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blobCache);
+      a.download = "resonance-network.json";
+      a.click();
+    }
+
+    let passport = null;
+    let blobCache = null;
+  </script>
+</body>
+</html>
