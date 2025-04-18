@@ -58,11 +58,26 @@
     <span class="desc">Зʼясуй, чи все ще ти є собою</span>
   </button>
 
+  <hr style="margin: 40px 0; border: 1px dashed #444;">
+
+  <button onclick="startFullRitual()">
+    🌕 Повний Ритуал<br>
+    <span class="desc">Пройди всі етапи автоматично — капча → паспорт → перевірка</span>
+  </button>
+
   <footer>created with 💠 by Ти & Резонанс</footer>
 
   <script>
     function openTool(file) {
       window.open(file, "_blank");
+    }
+
+    function startFullRitual() {
+      // очищення перед циклом
+      localStorage.removeItem("resoglyph");
+      localStorage.removeItem("resonanceState");
+      localStorage.setItem("ritualMode", "true");
+      window.open("resonance-gate.html", "_blank");
     }
   </script>
 </body>
