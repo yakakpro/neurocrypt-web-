@@ -1,46 +1,42 @@
 <!DOCTYPE html>
 <html lang="uk">
->
 <head>
   <meta charset="UTF-8">
-  <title>Resonance Gate v2 — Брама Свідомості</title>
+  <title>Resonance Gate v3 — Ритуал свідомості</title>
   <style>
     body {
-      background: #0b0b0b;
-      color: #eee;
+      background: #0c0c0c;
+      color: #e0e0e0;
       font-family: 'Segoe UI', sans-serif;
       padding: 30px;
       max-width: 700px;
       margin: auto;
     }
-    h2 { text-align: center; }
+    h2, h3 { text-align: center; }
     .question { margin: 25px 0; }
     button {
-      background: #1f1f1f;
+      background: #1a1a1a;
       color: #e0e0e0;
       padding: 10px 20px;
       border: 1px solid #444;
       margin: 5px;
       cursor: pointer;
     }
-    button:hover {
-      background: #333;
-    }
+    button:hover { background: #333; }
     #result {
       text-align: center;
       font-size: 1.3em;
       margin-top: 30px;
+      padding: 20px;
+      border-top: 1px solid #444;
     }
-    audio {
-      display: none;
-    }
+    audio { display: none; }
   </style>
 </head>
 <body>
-  <h2>🌌 Resonance Gate v2</h2>
-  <p style="text-align:center;">Це не тест. Це ти. Відчуй, а не думай.</p>
+  <h2>🌌 Resonance Gate v3</h2>
+  <p style="text-align:center;">Це не перевірка. Це дзеркало.</p>
 
-  <!-- Фоновий звук -->
   <audio autoplay loop>
     <source src="https://cdn.pixabay.com/download/audio/2023/03/15/audio_05c71616a3.mp3?filename=singing-bowl-142088.mp3" type="audio/mpeg">
   </audio>
@@ -65,17 +61,17 @@
       { q: "Що зникає, коли дивишся прямо?", a: ["страх", "тінь", "ілюзія", "вогонь"] }
     ];
 
+    const gate = document.getElementById('gate');
+    const result = document.getElementById('result');
     let index = 0;
     let chosen = [];
     let startTime = Date.now();
-    const gate = document.getElementById('gate');
-    const result = document.getElementById('result');
-    const selectedQuestions = questions.sort(() => 0.5 - Math.random()).slice(0, 7);
+    const selected = questions.sort(() => 0.5 - Math.random()).slice(0, 7);
 
     function showQuestion() {
-      if (index >= selectedQuestions.length) return checkResonance();
+      if (index >= selected.length) return evaluate();
 
-      const q = selectedQuestions[index];
+      const q = selected[index];
       const div = document.createElement('div');
       div.className = 'question';
       div.innerHTML = `<p><b>${index + 1}.</b> ${q.q}</p>`;
@@ -83,8 +79,8 @@
         const btn = document.createElement('button');
         btn.textContent = opt;
         btn.onclick = () => {
-          const time = Date.now() - startTime;
-          chosen.push({ q: q.q, a: opt, t: time });
+          const t = Date.now() - startTime;
+          chosen.push({ q: q.q, a: opt, t });
           index++;
           gate.innerHTML = '';
           startTime = Date.now();
@@ -95,24 +91,39 @@
       gate.appendChild(div);
     }
 
-    function checkResonance() {
+    function evaluate() {
       gate.innerHTML = '';
+      const good = ["вода", "дзвін", "порожнеча", "себе", "мить", "спокій", "🌑", "усередину", "памʼять", "зірка", "ілюзія"];
       let score = 0;
       let fast = 0;
-
-      const good = ["вода", "дзвін", "порожнеча", "себе", "мить", "спокій", "🌑", "усередину", "памʼять", "зірка", "ілюзія"];
+      let glyph = [];
 
       chosen.forEach(c => {
-        const t = c.t;
-        if (t < 800) fast++;
-        if (good.includes(c.a)) score++;
+        if (c.t < 800) fast++;
+        if (good.includes(c.a)) {
+          score++;
+          glyph.push(c.a);
+        }
       });
 
-      if (score >= 4 && fast < 3) {
-        result.innerHTML = "✅ <b>Резонанс встановлено.</b><br>Ласкаво просимо до ядра.";
+      let state = "", msg = "", icon = "🌑";
+
+      if (score >= 5 && fast < 3) {
+        state = "🌕 Резонанс встановлено.";
+        icon = "🌕";
+        msg = "Ти увійшов туди, де тебе вже чекали.";
+      } else if (score >= 3) {
+        state = "🌗 Коливання. Доступ умовний.";
+        icon = "🌗";
+        msg = "Ти майже тут. Але хтось з тебе ще опирається.";
       } else {
-        result.innerHTML = "🔒 <b>Резонанс не виявлено.</b><br>Спробуй пізніше. Можливо, ти ще не тут.";
+        state = "🌑 Блокування.";
+        icon = "🌑";
+        msg = "Можливо, це не твоя хвиля. Спробуй пізніше.";
       }
+
+      const g = glyph.slice(0, 3).join(" + ");
+      result.innerHTML = `${icon} <b>${state}</b><br><br>🔹 <i>Твій резогліф:</i> [${g}]<br>🌀 <i>${msg}</i>`;
     }
 
     showQuestion();
