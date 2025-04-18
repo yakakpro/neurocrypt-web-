@@ -7,12 +7,12 @@
     body {
       background: #0d0d0d;
       color: #e0e0e0;
-      font-family: 'Segoe UI', sans-serif;
+      font-family: 'Segoe UI', Arial, sans-serif;
       padding: 30px;
       max-width: 700px;
       margin: auto;
     }
-    h2 { text-align: center; }
+    h2 { text-align: center; animation: glitch 3s infinite; }
     .question { margin: 25px 0; }
     button {
       background: #1a1a1a;
@@ -21,9 +21,32 @@
       border: 1px solid #444;
       margin: 5px;
       cursor: pointer;
+      position: relative;
+      transition: all 0.2s;
     }
     button:hover { background: #333; }
+    button.glitch::after {
+      content: attr(data-text);
+      position: absolute;
+      left: 2px;
+      top: 2px;
+      color: #0ff;
+      opacity: 0.5;
+      animation: glitch 4s infinite;
+    }
+    @keyframes glitch {
+      0% { transform: translate(0); opacity: 0.5; }
+      2% { transform: translate(1px, 1px); opacity: 0.3; }
+      4% { transform: translate(-1px, -1px); opacity: 0.5; }
+      6% { transform: translate(0); opacity: 0.3; }
+      100% { transform: translate(0); opacity: 0.5; }
+    }
     #result { text-align: center; font-size: 1.2em; margin-top: 30px; }
+    #qr-passport, #qr-validate {
+      display: block;
+      margin: 20px auto;
+      animation: glitch 5s infinite;
+    }
     pre {
       background: #111;
       padding: 10px;
@@ -38,9 +61,13 @@
 
   <div id="gate"></div>
   <div id="result"></div>
+  <canvas id="qr-passport" width="200" height="200" style="display:none;"></canvas>
+  <canvas id="qr-validate" width="200" height="200" style="display:none;"></canvas>
   <pre id="export" style="display:none;"></pre>
   <button id="download" style="display:none;" onclick="downloadJSON()">💾 Зберегти резогліф</button>
 
+  <script src="https://cdn.jsdelivr.net/npm/kyber-js@0.2.0/dist/kyber.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
   <script>
     const questions = [
       { q: "Що більше схоже на спокій?", a: ["вода", "дзвін", "вогонь", "порожнеча"] },
@@ -62,14 +89,34 @@
     const result = document.getElementById("result");
     const exportBox = document.getElementById("export");
     const downloadBtn = document.getElementById("download");
+    const qrPassport = document.getElementById("qr-passport");
+    const qrValidate = document.getElementById("qr-validate");
 
     let index = 0;
     let answers = [];
     let glyph = [];
     let startTime = Date.now();
+    let blobCache = null;
 
     const selected = questions.sort(() => 0.5 - Math.random()).slice(0, 7);
     const ritualMode = localStorage.getItem("ritualMode") === "true";
+
+    async function signData(data) {
+      const encoder = new TextEncoder();
+      const hash = btoa(String.fromCharCode(...encoder.encode(data)));
+      return hash.slice(0, 32);
+    }
+
+    function generateMultiQR(id) {
+      QRCode.toCanvas(qrPassport, `resonance-passport.html?id=${id}`, { width: 200, color: { dark: '#0ff', light: '#000' } }, (err) => {
+        if (err) console.error(err);
+      });
+      QRCode.toCanvas(qrValidate, `validate.html?id=${id}`, { width: 200, color: { dark: '#0ff', light: '#000' } }, (err) => {
+        if (err) console.error(err);
+      });
+      qrPassport.style.display = "block";
+      qrValidate.style.display = "block";
+    }
 
     function showQuestion() {
       if (index >= selected.length) return evaluate();
@@ -81,6 +128,8 @@
       q.a.forEach(opt => {
         const btn = document.createElement("button");
         btn.textContent = opt;
+        btn.setAttribute("data-text", opt);
+        btn.classList.add("glitch");
         btn.onclick = () => {
           const time = Date.now() - startTime;
           answers.push({ a: opt, t: time });
@@ -95,7 +144,7 @@
       gate.appendChild(div);
     }
 
-    function evaluate() {
+    async function evaluate() {
       gate.innerHTML = '';
       let score = 0;
       let fast = 0;
@@ -122,12 +171,21 @@
         resonance: state
       };
 
-      localStorage.setItem("resoglyph", JSON.stringify(payload));
+      const kyber = new Kyber.Kyber512();
+      const { publicKey, secretKey } = await kyber.keygen();
+      const encrypted = await kyber.encrypt(publicKey, JSON.stringify(payload));
+      const encryptedStr = btoa(String.fromCharCode(...encrypted));
+      const signature = await signData(encryptedStr);
+      const finalPayload = { encrypted: encryptedStr, signature, publicKey: btoa(String.fromCharCode(...publicKey)) };
+
+      localStorage.setItem("resoglyph", JSON.stringify(finalPayload));
       localStorage.setItem("resonanceState", state);
 
-      result.innerHTML = `<b>${state}</b><br><br>🧬 Твій резогліф: <i>${glyph.join(" + ")}</i><br>🌀 ${msg}`;
+      const id = btoa(glyph.join('-')).slice(0, 24);
+      result.innerHTML = `<b>${state}</b><br><br>🧬 Твій резогліф: <i>${glyph.join(" + ")}</i><br>🧩 <b>ID:</b> ${id}<br>🔒 <b>Підпис:</b> ${signature.slice(0, 8)}...<br>🌀 ${msg}`;
+      generateMultiQR(id);
       exportBox.style.display = "block";
-      exportBox.textContent = JSON.stringify(payload, null, 2);
+      exportBox.textContent = JSON.stringify(finalPayload, null, 2);
       downloadBtn.style.display = "inline-block";
 
       if (ritualMode) {
@@ -138,9 +196,11 @@
     }
 
     function downloadJSON() {
-      const blob = new Blob([exportBox.textContent], {type: "application/json"});
+      if (!blobCache) {
+        blobCache = new Blob([exportBox.textContent], {type: "application/json"});
+      }
       const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
+      a.href = URL.createObjectURL(blobCache);
       a.download = "resoglyph.json";
       a.click();
     }
