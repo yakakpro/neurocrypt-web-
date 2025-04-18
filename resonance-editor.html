@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>✍️ Резонансний Редактор</title>
+  <style>
+    body {
+      background: #0c0c0c;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      padding: 50px 30px;
+      max-width: 800px;
+      margin: auto;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    #matrix {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.1;
+      z-index: -1;
+    }
+    h1 {
+      font-size: 2em;
+      margin-bottom: 30px;
+      animation: glitch 3s infinite;
+    }
+    canvas {
+      display: block;
+      margin: 20px auto;
+      border: 1px solid #555;
+      background: #000;
+      animation: pulse 6s infinite;
+    }
+    button {
+      background: #1a1a1a;
+      color: #eee;
+      padding: 15px 25px;
+      border: 1px solid #444;
+      margin: 5px;
+      cursor: pointer;
+      font-size: 1em;
+      animation: glitch 5s infinite;
+    }
+    button:hover {
+      background: #333;
+      transform: scale(1.05);
+    }
+    #editor {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 1.2em;
+      animation: glitch 5s infinite;
+    }
+    pre {
+      background: #111;
+      padding: 10px;
+      overflow-x: auto;
+      margin-top: 20px;
+    }
+    footer {
+      margin-top: 60px;
+      font-size: 0.8em;
+      color: #555;
+      animation: glitch 5s infinite;
+    }
+    .question { margin: 25px 0; }
+    @keyframes glitch {
+      0% { transform: translate(0); opacity: 1; }
+      2% { transform: translate(1px, 1px); opacity: 0.95; }
+      4% { transform: translate(-1px, -1px); opacity: 0.95; }
+      6% { transform: translate(0); opacity: 1; }
+      100% { transform: translate(0); opacity: 1; }
+    }
+    @keyframes pulse {
+      0% { filter: brightness(1); }
+      50% { filter: brightness(1.5); }
+      100% { filter: brightness(1); }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="matrix"></canvas>
+  <h1>✍️ Резонансний Редактор</h1>
+  <p>Створи свій унікальний гліф через питання душі!</p>
+
+  <div id="editor"></div>
+  <canvas id="glyph-viz" width="400" height="400"></canvas>
+  <pre id="glyph-data" style="display:none;"></pre>
+  <button id="saveGlyph" onclick="saveGlyph()" style="display:none;">💾 Зберегти гліф</button>
+  <button id="savePng" onclick="savePng()" style="display:none;">🖼️ Зберегти як PNG</button>
+
+  <footer>created with 💠 by Ти & Резонанс</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/kyber-js@0.2.0/dist/kyber.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.min.js"></script>
+  <script>
+    // Matrix rain
+    const matrixCanvas = document.getElementById("matrix");
+    const ctx = matrixCanvas.getContext("2d");
+    matrixCanvas.height = window.innerHeight;
+    matrixCanvas.width = window.innerWidth;
+    const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ🌀";
+    const fontSize = 10;
+    const columns = matrixCanvas.width / fontSize;
+    const drops = Array(Math.floor(columns)).fill(1);
+    function drawMatrix() {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+      ctx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
+      ctx.fillStyle = "#0ff";
+      ctx.font = `${fontSize}px monospace`;
+      drops.forEach((y, i) => {
+        const text = chars.charAt(Math.floor(Math.random() * chars.length));
+        const x = i * fontSize;
+        ctx.fillText(text, x, y * fontSize);
+        if (y * fontSize > matrixCanvas.height && Math.random() > 0.975) drops[i] = 0;
+        drops[i]++;
+      });
+    }
+    setInterval(drawMatrix, 50);
+
+    // Glyph visualization
+    const glyphCanvas = document.getElementById("glyph-viz");
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, glyphCanvas.width / glyphCanvas.height, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ canvas: glyphCanvas });
+    renderer.setSize(glyphCanvas.width, glyphCanvas.height);
+    camera.position.z = 50;
+    let glyph = [];
+    let rotation = 0;
+
+    function drawGlyph() {
+      scene.children.forEach(child => scene.remove(child));
+      glyph.forEach((answer, i) => {
+        const geometry = new THREE.SphereGeometry(1, 32, 32);
+        const material = new THREE.MeshBasicMaterial({
+          color: 0x00ffff,
+          transparent: true,
+          opacity: 0.8
+        });
+        const sphere = new THREE.Mesh(geometry, material);
+        const angle = (i / glyph.length) * 2 * Math.PI;
+        const radius = 10 + glyph.length * 2;
+        sphere.position.set(
+          radius * Math.cos(angle + rotation),
+          radius * Math.sin(angle + rotation),
+          Math.sin(i) * 5
+        );
+        scene.add(sphere);
+        if (i > 0) {
+          const prevAngle = ((i - 1) / glyph.length) * 2 * Math.PI;
+          const prevX = radius * Math.cos(prevAngle + rotation);
+          const prevY = radius * Math.sin(prevAngle + rotation);
+          const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(prevX, prevY, Math.sin(i - 1) * 5),
+            sphere.position
+          ]);
+          const lineMaterial = new THREE.LineBasicMaterial({ color: 0x00ffff, opacity: 0.5, transparent: true });
+          const line = new THREE.Line(lineGeometry, lineMaterial);
+          scene.add(line);
+        }
+      });
+      rotation += 0.01;
+      renderer.render(scene, camera);
+    }
+    setInterval(drawGlyph, 16);
+
+    const questions = [
+      { q: "Що є твоїм джерелом сили?", a: ["світло", "темрява", "рух", "тиша"] },
+      { q: "Що ти шукаєш у хаосі?", a: ["порядок", "сенс", "свободу", "спокій"] },
+      { q: "Що тримає твій центр?", a: ["серце", "розум", "душа", "воля"] },
+      { q: "Який шлях ти обираєш?", a: ["вгору", "вглиб", "вперед", "назад"] },
+      { q: "Що є твоїм відлунням?", a: ["слово", "погляд", "жест", "тишина"] },
+      { q: "Який символ тебе кличе?", a: ["✨", "🌀", "⚡", "🌌"] },
+      { q: "Що ти залишиш після себе?", a: ["слід", "світло", "тінь", "пам’ять"] }
+    ];
+
+    const editor = document.getElementById("editor");
+    let index = 0;
+
+    async function showQuestion() {
+      if (index >= questions.length) {
+        finalizeGlyph();
+        return;
+      }
+
+      const q = questions[index];
+      const div = document.createElement("div");
+      div.className = "question";
+      div.innerHTML = `<p><b>${index + 1}.</b> ${q.q}</p>`;
+      q.a.forEach(opt => {
+        const btn = document.createElement("button");
+        btn.textContent = opt;
+        btn.onclick = () => {
+          glyph.push(opt);
+          index++;
+          editor.innerHTML = '';
+          drawGlyph();
+          showQuestion();
+        };
+        div.appendChild(btn);
+      });
+      editor.appendChild(div);
+    }
+
+    async function finalizeGlyph() {
+      try {
+        const glyphData = {
+          glyph,
+          timestamp: new Date().toISOString(),
+          resonance: 100 // Default resonance for custom glyph
+        };
+        const kyber = new Kyber.Kyber512();
+        const { publicKey, secretKey } = await kyber.keygen();
+        const encrypted = await kyber.encrypt(publicKey, JSON.stringify(glyphData));
+        const encryptedStr = btoa(String.fromCharCode(...encrypted));
+        const signature = await signData(encryptedStr);
+        const finalGlyph = { encrypted: encryptedStr, signature, publicKey: btoa(String.fromCharCode(...publicKey)) };
+        localStorage.setItem("resoglyph", JSON.stringify(finalGlyph));
+        document.getElementById("editor").innerHTML = `🧬 Твій гліф створено: <i>${glyph.join(" + ")}</i>`;
+        document.getElementById("glyph-data").textContent = JSON.stringify(finalGlyph, null, 2);
+        document.getElementById("glyph-data").style.display = "block";
+        document.getElementById("saveGlyph").style.display = "inline-block";
+        document.getElementById("savePng").style.display = "inline-block";
+      } catch (e) {
+        alert("Помилка створення гліфа: " + e.message);
+      }
+    }
+
+    async function signData(data) {
+      const encoder = new TextEncoder();
+      const hash = btoa(String.fromCharCode(...encoder.encode(data)));
+      return hash.slice(0, 32);
+    }
+
+    function saveGlyph() {
+      if (!blobCache) {
+        const glyphData = localStorage.getItem("resoglyph");
+        blobCache = new Blob([glyphData], {type: "application/json"});
+      }
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blobCache);
+      a.download = "resonance-glyph.json";
+      a.click();
+    }
+
+    function savePng() {
+      const a = document.createElement("a");
+      a.href = glyphCanvas.toDataURL("image/png");
+      a.download = "resonance-glyph.png";
+      a.click();
+    }
+
+    let blobCache = null;
+    showQuestion();
+  </script>
+</body>
+</html>
