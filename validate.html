@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>🔍 Резонанс-Валідатор</title>
+  <style>
+    body {
+      background: #0c0c0c;
+      color: #eee;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      padding: 30px;
+      max-width: 800px;
+      margin: auto;
+    }
+    h2 {
+      text-align: center;
+      animation: glitch 3s infinite;
+    }
+    @keyframes glitch {
+      0% { transform: translate(0); opacity: 1; }
+      2% { transform: translate(1px, 1px); opacity: 0.95; }
+      4% { transform: translate(-1px, -1px); opacity: 0.95; }
+      6% { transform: translate(0); opacity: 1; }
+      100% { transform: translate(0); opacity: 1; }
+    }
+    #result { text-align: center; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h2>🔍 Резонанс-Валідатор</h2>
+  <p style="text-align:center;">Перевірка твого резонанс-паспорта.</p>
+  <div id="result"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/kyber-js@0.2.0/dist/kyber.min.js"></script>
+  <script>
+    const result = document.getElementById("result");
+
+    function verifySignature(data, signature) {
+      // Simulated Dilithium verification (hash-based)
+      const encoder = new TextEncoder();
+      const computed = btoa(String.fromCharCode(...encoder.encode(data))).slice(0, 32);
+      return computed === signature;
+    }
+
+    async function validatePassport() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const id = urlParams.get("id");
+      if (!id) {
+        result.innerHTML = "⚠️ ID не знайдено.";
+        return;
+      }
+
+      const passportRaw = localStorage.getItem("resoglyph");
+      if (!passportRaw) {
+        result.innerHTML = "⚠️ Паспорт не знайдено в пам’яті.";
+        return;
+      }
+
+      try {
+        const passport = JSON.parse(passportRaw); // Assuming unencrypted for simplicity
+        const hashedId = btoa(passport.glyph.join('-')).slice(0, 24);
+        if (hashedId !== id) {
+          result.innerHTML = "❌ Паспорт не відповідає ID.";
+          return;
+        }
+
+        result.innerHTML = `
+          <p>✅ Паспорт валідний!</p>
+          <p>🧬 <b>Гліф:</b> ${passport.glyph.join(' + ')}</p>
+          <p>🧩 <b>ID:</b> ${id}</p>
+        `;
+      } catch (e) {
+        result.innerHTML = "❌ Помилка валідації: " + e.message;
+      }
+    }
+
+    validatePassport();
+  </script>
+</body>
+</html>
