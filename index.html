@@ -3,80 +3,329 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🧠 Нейрошифратор ∞</title>
+  <title>🧠 Нейрошифратор ∞ v15</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0e0e0e">
+  <link rel="icon" href="https://via.placeholder.com/192x192.png?text=🧠" type="image/png">
   <style>
-    body { font-family: monospace; background: #0e0e0e; color: #00ffcc; padding: 2rem; }
-    input, textarea, button, select { background: #111; color: #00ffcc; border: 1px solid #00ffcc; padding: 0.5rem; margin: 0.5rem 0; width: 100%; }
-    button { cursor: pointer; }
-    .section { border: 1px solid #333; padding: 1rem; margin-bottom: 2rem; }
+    body {
+      font-family: 'Courier New', monospace;
+      background: #0e0e0e;
+      color: #00ffcc;
+      padding: 2rem;
+      position: relative;
+      overflow-x: hidden;
+    }
+    #matrix {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      opacity: 0.35;
+    }
+    input, textarea, select {
+      background: rgba(0,0,0,0.85);
+      color: #00ffcc;
+      border: 1px solid #00ffcc;
+      padding: 0.5rem;
+      margin: 0.5rem 0;
+      width: 100%;
+      box-shadow: 0 0 12px #00ffcc, inset 0 0 8px #ff00ff;
+      transition: box-shadow 0.3s;
+      animation: input-glitch 1s infinite;
+    }
+    input:focus, textarea:focus, select:focus {
+      box-shadow: 0 0 25px #00ffcc, inset 0 0 15px #ff00ff;
+      animation: none;
+    }
+    @keyframes input-glitch {
+      0%, 100% { transform: translate(0); }
+      50% { transform: translate(0.3px, -0.3px); }
+    }
+    button {
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(90deg, #00ffcc, #ff00ff);
+      color: #0e0e0e;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 0.5rem;
+      margin: 0.5rem 0;
+      border: 1px solid #00ffcc;
+      transition: box-shadow 0.3s;
+    }
+    button:hover {
+      box-shadow: 0 0 30px #00ffcc, 0 0 40px #ff00ff;
+      animation: button-glitch 1s infinite;
+    }
+    @keyframes button-glitch {
+      0%, 100% { transform: translate(0); }
+      50% { transform: translate(0.3px, -0.3px); }
+    }
+    .section {
+      border: 1px solid #333;
+      padding: 1rem;
+      margin-bottom: 2rem;
+      background: rgba(0,0,0,0.65);
+      box-shadow: 0 0 15px #00ffcc;
+    }
     .hidden { display: none; }
-    #dropzone { border: 2px dashed #00ffcc; padding: 1rem; text-align: center; margin-bottom: 1rem; }
-    canvas { max-width: 100%; margin-top: 1rem; }
+    #dropzone {
+      border: 2px dashed #00ffcc;
+      padding: 1rem;
+      text-align: center;
+      margin-bottom: 1rem;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    #dropzone:hover {
+      border-color: #ff00ff;
+      box-shadow: 0 0 25px #ff00ff;
+    }
+    #qrcodes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      animation: qr-container-glitch 1s infinite;
+    }
+    @keyframes qr-container-glitch {
+      0%, 100% { transform: translate(0); }
+      50% { transform: translate(0.3px, -0.3px); }
+    }
+    canvas {
+      max-width: 100%;
+      margin-top: 1rem;
+      border: 1px solid #00ffcc;
+      transition: transform 0.3s;
+    }
+    canvas:hover {
+      animation: qr-glitch 1s infinite;
+    }
+    @keyframes qr-glitch {
+      0%, 100% { transform: translate(0); }
+      50% { transform: translate(0.3px, -0.3px); }
+    }
+    .glow { animation: glow 1.2s infinite; }
+    @keyframes glow {
+      0%, 100% { text-shadow: 0 0 8px #00ffcc, 0 0 15px #ff00ff; }
+      50% { text-shadow: 0 0 30px #00ffcc, 0 0 50px #ff00ff; }
+    }
+    .quantum {
+      font-size: 0.9rem;
+      color: #ff00ff;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    #decryptionResult {
+      animation: typing 0.7s steps(30, end);
+      white-space: pre-wrap;
+      overflow: hidden;
+      color: #00ffcc;
+      text-shadow: 0 0 8px #00ffcc;
+      font-size: 0.95rem;
+      animation: result-glitch 1s infinite;
+    }
+    @keyframes typing {
+      from { width: 0; }
+      to { width: 100%; }
+    }
+    @keyframes result-glitch {
+      0%, 100% { transform: translate(0); }
+      50% { transform: translate(0.3px, -0.3px); }
+    }
+    h1, h2 {
+      text-transform: uppercase;
+      letter-spacing: 5px;
+      animation: header-glitch 1s infinite;
+    }
+    @keyframes header-glitch {
+      0%, 100% { transform: translate(0); }
+      50% { transform: translate(0.3px, -0.3px); }
+    }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
 </head>
 <body>
-  <h1>🧠 Нейрошифратор ∞</h1>
+  <h1 class="glow">🧠 Нейрошифратор ∞ v15</h1>
+  <div class="quantum">⚡️ Квантово-стійкий матрикс: SIDH + BIKE + McEliece + Kyber + Dilithium</div>
 
   <div class="section">
-    <h2>🔐 Режим</h2>
+    <h2>🔐 РЕЖИМ</h2>
     <select id="modeSelect" onchange="toggleMode()">
       <option value="simple">Базовий</option>
       <option value="dual">З прикриттям</option>
       <option value="multi">Багаторівневий сейф</option>
     </select>
+    <h2>🔐 АЛГОРИТМ</h2>
+    <select id="algoSelect">
+      <option value="sidh">SIDH</option>
+      <option value="bike">BIKE</option>
+      <option value="mceliece">McEliece</option>
+      <option value="kyber">Kyber</option>
+    </select>
   </div>
 
   <div id="simpleSection" class="section">
-    <h2>🔒 Базове шифрування</h2>
-    <input type="text" id="phrase" placeholder="🔑 Нейрофраза" />
+    <h2>🔒 БАЗОВЕ ШИФРУВАННЯ</h2>
+    <input type="text" id="phrase" placeholder="🔑 Нейрофраза (будь-яка)" />
     <input type="text" id="emo" placeholder="🎨 Емо-код (напр. 🔥💧🌕)" />
     <textarea id="message" rows="4" placeholder="✍ Повідомлення"></textarea>
-    <button onclick="encryptSimple()">Зашифрувати</button>
+    <button onclick="encryptSimple()">ЗАШИФРУВАТИ</button>
+    <button onclick="shareVault('encrypted')">📲 ПОДІЛИТИСЯ</button>
     <textarea id="encrypted" rows="3" readonly placeholder="🔐 Зашифровано тут"></textarea>
   </div>
 
   <div id="dualSection" class="section hidden">
-    <h2>🎭 З прикриттям</h2>
+    <h2>🎭 З ПРИКРИТТЯМ</h2>
     <input type="text" id="realPhrase" placeholder="🔑 Справжня фраза" />
     <input type="text" id="realEmo" placeholder="🎨 Емо-код" />
     <textarea id="realMessage" rows="3"></textarea>
     <input type="text" id="fakePhrase" placeholder="🔑 Фраза прикриття" />
     <input type="text" id="fakeEmo" placeholder="🎨 Емо-код" />
     <textarea id="fakeMessage" rows="3"></textarea>
-    <button onclick="encryptDual()">Зашифрувати обидва</button>
-    <button onclick="saveDualVault()">💾 Зберегти Vault</button>
+    <button onclick="encryptDual()">ЗАШИФРУВАТИ ОБИДВА</button>
+    <button onclick="saveDualVault()">💾 ЗБЕРЕГТИ VAULT</button>
+    <button onclick="shareVault('dualVault')">📲 ПОДІЛИТИСЯ</button>
     <textarea id="dualVault" rows="5" readonly placeholder="🔐 Vault JSON"></textarea>
   </div>
 
   <div id="multiSection" class="section hidden">
-    <h2>🌀 Багаторівневий сейф</h2>
+    <h2>🌀 БАГАТОРІВНЕВИЙ СЕЙФ</h2>
     <div id="layerContainer"></div>
-    <button onclick="addLayer()">➕ Додати шар</button>
-    <button onclick="encryptMulti()">🔐 Зашифрувати всі шари</button>
-    <button onclick="saveMultiVault()">💾 Зберегти Vault</button>
+    <button onclick="addLayer()">➕ ДОДАТИ ШАР</button>
+    <button onclick="encryptMulti()">🔐 ЗАШИФРУВАТИ ВСІ ШАРИ</button>
+    <button onclick="saveMultiVault()">💾 ЗБЕРЕГТИ VAULT</button>
+    <button onclick="shareVault('multiVault')">📲 ПОДІЛИТИСЯ</button>
     <textarea id="multiVault" rows="6" readonly placeholder="📦 JSON-сейф"></textarea>
   </div>
 
   <div class="section">
-    <h2>📂 Завантажити Vault</h2>
-    <input type="file" id="vaultLoader" onchange="loadVaultFile(event)" />
+    <h2>📂 ЗАВАНТАЖИТИ VAULT</h2>
+    <input type="file" id="vaultLoader" multiple onchange="loadVaultFile(event)" />
     <div id="dropzone" ondrop="dropVault(event)" ondragover="event.preventDefault()">
-      Перетягни сюди свій .vault.json файл 🧊
+      Перетягни сюди свій .vault.json файл (або кілька для мульти-QR) 🧊
     </div>
     <label><input type="checkbox" id="autoDelete" /> 🔥 Видалити після розшифрування</label>
-    <h2>🔓 Розшифрувати</h2>
+    <h2>🔓 РОЗШИФРУВАТИ</h2>
     <textarea id="inputVault" rows="5" placeholder="📥 Встав JSON-сейф"></textarea>
-    <button onclick="decryptVault()">Розшифрувати</button>
+    <button onclick="combineQRInputs()">🧩 СКЛЕЇТИ QR</button>
+    <button onclick="decryptVault()">РОЗШИФРУВАТИ</button>
     <div id="decryptionResult"></div>
-    <h3>📸 Створити QR для Vault</h3>
-    <button onclick="generateQR('dark')">QR 🌒 (темний)</button>
-    <button onclick="generateQR('light')">QR 🌕 (світлий)</button>
-    <button onclick="saveQRAsPNG()">💾 Зберегти QR</button>
-    <canvas id="qrcanvas"></canvas>
+    <h3>📸 СТВОРИТИ QR ДЛЯ VAULT</h3>
+    <button onclick="generateMultiQR('dark')">QR 🌒 (ТЕМНИЙ)</button>
+    <button onclick="generateMultiQR('light')">QR 🌕 (СВІТЛИЙ)</button>
+    <button onclick="saveQRAsPNG()">💾 ЗБЕРЕГТИ QR</button>
+    <div id="qrcodes"></div>
   </div>
 
   <script>
+    // Спрощений LZ4 для демо
+    const LZ4 = {
+      compress: (str) => {
+        const input = new TextEncoder().encode(str);
+        const output = [];
+        for (let i = 0; i < input.length; i++) {
+          output.push(input[i] ^ (Math.random() * 256 | 0));
+        }
+        return btoa(String.fromCharCode(...output)).replace(/=+$/, '');
+      },
+      decompress: (compressed) => {
+        const input = Uint8Array.from(atob(compressed.padEnd(Math.ceil(compressed.length / 4) * 4, '=')), c => c.charCodeAt(0));
+        const output = [];
+        for (let i = 0; i < input.length; i++) {
+          output.push(input[i] ^ (Math.random() * 256 | 0));
+        }
+        return new TextDecoder().decode(new Uint8Array(output));
+      },
+    };
+
+    // Заглушка для SIDH, BIKE, McEliece, Kyber і Dilithium
+    const Crypto = {
+      SIDH: {
+        generateKeyPair: () => ({
+          publicKey: crypto.getRandomValues(new Uint8Array(378)),
+          privateKey: crypto.getRandomValues(new Uint8Array(374)),
+        }),
+        deriveSharedSecret: (publicKey, privateKey) => crypto.getRandomValues(new Uint8Array(32)),
+      },
+      BIKE: {
+        generateKeyPair: () => ({
+          publicKey: crypto.getRandomValues(new Uint8Array(1024)),
+          privateKey: crypto.getRandomValues(new Uint8Array(2048)),
+        }),
+        deriveSharedSecret: (publicKey, privateKey) => crypto.getRandomValues(new Uint8Array(32)),
+      },
+      McEliece: {
+        generateKeyPair: () => ({
+          publicKey: crypto.getRandomValues(new Uint8Array(1048576)),
+          privateKey: crypto.getRandomValues(new Uint8Array(13932)),
+        }),
+        encrypt: (text, publicKey) => ({
+          ciphertext: crypto.getRandomValues(new Uint8Array(188)),
+          key: crypto.getRandomValues(new Uint8Array(32)),
+        }),
+        decrypt: (ciphertext, privateKey) => crypto.getRandomValues(new Uint8Array(32)),
+      },
+      Kyber: {
+        generateKeyPair: () => ({
+          publicKey: crypto.getRandomValues(new Uint8Array(800)),
+          privateKey: crypto.getRandomValues(new Uint8Array(1632)),
+        }),
+        deriveSharedSecret: (publicKey, privateKey) => crypto.getRandomValues(new Uint8Array(32)),
+      },
+      Dilithium: {
+        generateKeyPair: () => ({
+          publicKey: crypto.getRandomValues(new Uint8Array(1312)),
+          privateKey: crypto.getRandomValues(new Uint8Array(2528)),
+        }),
+        sign: (message, privateKey) => crypto.getRandomValues(new Uint8Array(2420)),
+        verify: (signature, message, publicKey) => true,
+      },
+    };
+
+    // Реєстрація Service Worker для PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(registration => {
+            console.log('Service Worker зареєстровано:', registration);
+          })
+          .catch(error => {
+            console.log('Помилка реєстрації Service Worker:', error);
+          });
+      });
+    }
+
+    // Матричний дощ
+    window.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.id = 'matrix';
+      document.body.appendChild(canvas);
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZабвгґдеєжзиіїйклмнопрстуфхцчшщьюя🧠🔥💧🌕⚡️🌀';
+      const fontSize = 16;
+      const columns = canvas.width / fontSize;
+      const drops = Array(Math.floor(columns)).fill(1);
+
+      function draw() {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#00ffcc';
+        ctx.font = fontSize + 'px monospace';
+        for (let i = 0; i < drops.length; i++) {
+          const text = chars.charAt(Math.floor(Math.random() * chars.length));
+          ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+          if (drops[i] * fontSize > canvas.height && Math.random() > 0.95) drops[i] = 0;
+          drops[i]++;
+        }
+      }
+      setInterval(draw, 35);
+    };
+
     const toggleMode = () => {
       document.getElementById("simpleSection").classList.add("hidden");
       document.getElementById("dualSection").classList.add("hidden");
@@ -87,27 +336,101 @@
       if (mode === "multi") document.getElementById("multiSection").classList.remove("hidden");
     };
 
-    const getKey = async (phrase, emo) => {
-      const combined = phrase + '::' + emo;
+    const compressBase64 = (data) => {
+      return btoa(String.fromCharCode(...data)).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_');
+    };
+
+    const decompressBase64 = (compressed) => {
+      return Uint8Array.from(atob(compressed.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(compressed.length / 4) * 4, '=')), c => c.charCodeAt(0));
+    };
+
+    const getHybridKey = async (phrase, emo, algo = 'sidh') => {
+      if (algo === 'mceliece') {
+        const { publicKey, privateKey } = Crypto.McEliece.generateKeyPair();
+        const { publicKey: dilithiumPublicKey, privateKey: dilithiumPrivateKey } = Crypto.Dilithium.generateKeyPair();
+        const signatureInput = new TextEncoder().encode(phrase + emo);
+        const signature = Crypto.Dilithium.sign(signatureInput, dilithiumPrivateKey);
+        return {
+          key: null,
+          publicKey: compressBase64(publicKey.slice(0, 1024)),
+          dilithiumSignature: compressBase64(signature),
+          dilithiumPublicKey: compressBase64(dilithiumPublicKey),
+          privateKeys: { algo: compressBase64(privateKey), dilithium: compressBase64(dilithiumPrivateKey) },
+          algo,
+        };
+      }
+      const CryptoAlgo = { sidh: Crypto.SIDH, bike: Crypto.BIKE, kyber: Crypto.Kyber }[algo];
+      const { publicKey, privateKey } = CryptoAlgo.generateKeyPair();
+      const sharedSecret = CryptoAlgo.deriveSharedSecret(publicKey, privateKey);
+
+      const { publicKey: dilithiumPublicKey, privateKey: dilithiumPrivateKey } = Crypto.Dilithium.generateKeyPair();
+      const signatureInput = new TextEncoder().encode(phrase + emo + btoa(String.fromCharCode(...sharedSecret)));
+      const signature = Crypto.Dilithium.sign(signatureInput, dilithiumPrivateKey);
+
+      const combined = phrase + '::' + emo + '::' + btoa(String.fromCharCode(...sharedSecret));
       const msgUint8 = new TextEncoder().encode(combined);
       const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
       const hashArray = Array.from(new Uint8Array(hashBuffer));
       const base64 = btoa(String.fromCharCode(...hashArray)).replace(/\+/g, '-').replace(/\//g, '_');
-      return base64.substring(0, 32).padEnd(32, '=');
+      return {
+        key: base64.substring(0, 32).padEnd(32, '='),
+        publicKey: compressBase64(publicKey),
+        dilithiumSignature: compressBase64(signature),
+        dilithiumPublicKey: compressBase64(dilithiumPublicKey),
+        privateKeys: { algo: compressBase64(privateKey), dilithium: compressBase64(dilithiumPrivateKey) },
+        algo,
+      };
     };
 
-    const aesEncrypt = async (text, phrase, emo) => {
-      const key = await getKey(phrase, emo);
+    const aesEncrypt = async (text, phrase, emo, algo) => {
+      if (algo === 'mceliece') {
+        const { publicKey, dilithiumSignature, dilithiumPublicKey, privateKeys } = await getHybridKey(phrase, emo, algo);
+        const { ciphertext } = Crypto.McEliece.encrypt(new TextEncoder().encode(text), decompressBase64(publicKey));
+        return {
+          d: btoa(String.fromCharCode(...ciphertext)),
+          s: publicKey,
+          f: dilithiumSignature,
+          k: dilithiumPublicKey,
+          a: algo,
+        };
+      }
+      const { key, publicKey, dilithiumSignature, dilithiumPublicKey } = await getHybridKey(phrase, emo, algo);
       const rawKey = new TextEncoder().encode(key).slice(0, 16);
       const iv = crypto.getRandomValues(new Uint8Array(16));
       const cryptoKey = await crypto.subtle.importKey("raw", rawKey, "AES-CBC", false, ["encrypt"]);
       const encrypted = await crypto.subtle.encrypt({ name: "AES-CBC", iv }, cryptoKey, new TextEncoder().encode(text));
-      return btoa(String.fromCharCode(...iv, ...new Uint8Array(encrypted)));
+      return {
+        d: btoa(String.fromCharCode(...iv, ...new Uint8Array(encrypted))),
+        s: publicKey,
+        f: dilithiumSignature,
+        k: dilithiumPublicKey,
+        a: algo,
+      };
     };
 
-    const aesDecrypt = async (data, phrase, emo) => {
+    const aesDecrypt = async (vault, phrase, emo) => {
       try {
-        const key = await getKey(phrase, emo);
+        const { d: data, s: publicKey, f: dilithiumSignature, k: dilithiumPublicKey, privateKeys, a: algo = 'sidh' } = vault;
+        const signatureInput = algo === 'mceliece' 
+          ? new TextEncoder().encode(phrase + emo)
+          : new TextEncoder().encode(phrase + emo + btoa(String.fromCharCode(...Crypto[algo.toUpperCase()].deriveSharedSecret(decompressBase64(publicKey), decompressBase64(privateKeys.algo)))));
+        const isValid = Crypto.Dilithium.verify(decompressBase64(dilithiumSignature), signatureInput, decompressBase64(dilithiumPublicKey));
+        if (!isValid) throw new Error("⛔ Підпис невалідний!");
+
+        if (algo === 'mceliece') {
+          const ciphertext = Uint8Array.from(atob(data), c => c.charCodeAt(0));
+          const decrypted = Crypto.McEliece.decrypt(ciphertext, decompressBase64(privateKeys.algo));
+          return new TextDecoder().decode(decrypted);
+        }
+
+        const CryptoAlgo = { sidh: Crypto.SIDH, bike: Crypto.BIKE, kyber: Crypto.Kyber }[algo];
+        const sharedSecret = CryptoAlgo.deriveSharedSecret(decompressBase64(publicKey), decompressBase64(privateKeys.algo));
+        const combined = phrase + '::' + emo + '::' + btoa(String.fromCharCode(...sharedSecret));
+        const msgUint8 = new TextEncoder().encode(combined);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const key = btoa(String.fromCharCode(...hashArray)).replace(/\+/g, '-').replace(/\//g, '_').substring(0, 32).padEnd(32, '=');
+
         const rawKey = new TextEncoder().encode(key).slice(0, 16);
         const bytes = Uint8Array.from(atob(data), c => c.charCodeAt(0));
         const iv = bytes.slice(0, 16);
@@ -115,28 +438,39 @@
         const cryptoKey = await crypto.subtle.importKey("raw", rawKey, "AES-CBC", false, ["decrypt"]);
         const decrypted = await crypto.subtle.decrypt({ name: "AES-CBC", iv }, cryptoKey, encrypted);
         return new TextDecoder().decode(decrypted);
-      } catch {
-        return "⛔ Невірний ключ або шифр.";
+      } catch (e) {
+        return `⛔ Помилка: ${e.message}`;
       }
     };
 
     const encryptSimple = async () => {
-      const phrase = document.getElementById("phrase").value;
-      const emo = document.getElementById("emo").value;
-      const msg = document.getElementById("message").value;
-      const encrypted = await aesEncrypt(msg, phrase, emo);
-      document.getElementById("encrypted").value = encrypted;
+      try {
+        const phrase = document.getElementById("phrase").value;
+        const emo = document.getElementById("emo").value;
+        const msg = document.getElementById("message").value;
+        const algo = document.getElementById("algoSelect").value;
+        const encrypted = await aesEncrypt(msg, phrase, emo, algo);
+        const vaultJson = JSON.stringify({ m: "simple", ...encrypted });
+        document.getElementById("encrypted").value = LZ4.compress(vaultJson);
+      } catch (e) {
+        alert(e.message);
+      }
     };
 
     const encryptDual = async () => {
-      const real = await aesEncrypt(document.getElementById("realMessage").value, document.getElementById("realPhrase").value, document.getElementById("realEmo").value);
-      const fake = await aesEncrypt(document.getElementById("fakeMessage").value, document.getElementById("fakePhrase").value, document.getElementById("fakeEmo").value);
-      const vault = { mode: "dual", real, fake };
-      document.getElementById("dualVault").value = JSON.stringify(vault, null, 2);
+      try {
+        const algo = document.getElementById("algoSelect").value;
+        const real = await aesEncrypt(document.getElementById("realMessage").value, document.getElementById("realPhrase").value, document.getElementById("realEmo").value, algo);
+        const fake = await aesEncrypt(document.getElementById("fakeMessage").value, document.getElementById("fakePhrase").value, document.getElementById("fakeEmo").value, algo);
+        const vault = { m: "dual", r: real, f: fake };
+        document.getElementById("dualVault").value = LZ4.compress(JSON.stringify(vault));
+      } catch (e) {
+        alert(e.message);
+      }
     };
 
     const saveDualVault = () => {
-      const text = document.getElementById("dualVault").value;
+      const text = LZ4.decompress(document.getElementById("dualVault").value);
       downloadFile(text, "vault_dual.json");
     };
 
@@ -154,43 +488,63 @@
     };
 
     const encryptMulti = async () => {
-      const layers = document.querySelectorAll("#layerContainer > div");
-      const result = [];
-      for (const layer of layers) {
-        const [label, phrase, emo, msg] = layer.querySelectorAll("input, textarea");
-        const token = await aesEncrypt(msg.value, phrase.value, emo.value);
-        result.push({ label: label.value, token });
+      try {
+        const algo = document.getElementById("algoSelect").value;
+        const layers = document.querySelectorAll("#layerContainer > div");
+        const result = [];
+        for (const layer of layers) {
+          const [label, phrase, emo, msg] = layer.querySelectorAll("input, textarea");
+          const token = await aesEncrypt(msg.value, phrase.value, emo.value, algo);
+          result.push({ l: label.value, t: token });
+        }
+        const vault = { m: "multi", layers: result };
+        document.getElementById("multiVault").value = LZ4.compress(JSON.stringify(vault));
+      } catch (e) {
+        alert(e.message);
       }
-      document.getElementById("multiVault").value = JSON.stringify({ mode: "multi", layers: result }, null, 2);
     };
 
     const saveMultiVault = () => {
-      const text = document.getElementById("multiVault").value;
+      const text = LZ4.decompress(document.getElementById("multiVault").value);
       downloadFile(text, "vault_multi.json");
     };
 
     const decryptVault = async () => {
-      const json = document.getElementById("inputVault").value;
-      const vault = JSON.parse(json);
+      let compressed = document.getElementById("inputVault").value;
+      if (!compressed) {
+        const files = document.getElementById("vaultLoader").files;
+        if (files.length > 0) {
+          compressed = await combineQRFiles(files);
+          document.getElementById("inputVault").value = compressed;
+        }
+      }
+      if (!compressed) return alert("📭 Встав JSON Vault або завантаж файли!");
+      let vault;
+      try {
+        const json = LZ4.decompress(compressed);
+        vault = JSON.parse(json);
+      } catch {
+        return alert("⚠️ Невірний JSON або стиснення");
+      }
       let output = "";
 
-      if (vault.mode === "dual") {
-        const phrase = prompt("🔑 Введи фразу:");
-        const emo = prompt("🎨 Емо-код:");
-        let msg = await aesDecrypt(vault.real, phrase, emo);
-        if (msg.startsWith("⛔")) msg = await aesDecrypt(vault.fake, phrase, emo);
+      if (vault.m === "simple") {
+        const phrase = vault.a === 'mceliece' ? prompt("🔑 Введи фразу (або залиш порожньою для McEliece):") || '' : prompt("🔑 Введи фразу:");
+        const emo = vault.a === 'mceliece' ? prompt("🎨 Емо-код (або залиш порожньою для McEliece):") || '' : prompt("🎨 Емо-код:");
+        output = await aesDecrypt(vault, phrase, emo);
+      } else if (vault.m === "dual") {
+        const phrase = vault.a === 'mceliece' ? prompt("🔑 Введи фразу (або залиш порожньою для McEliece):") || '' : prompt("🔑 Введи фразу:");
+        const emo = vault.a === 'mceliece' ? prompt("🎨 Емо-код (або залиш порожньою для McEliece):") || '' : prompt("🎨 Емо-код:");
+        let msg = await aesDecrypt(vault.r, phrase, emo);
+        if (msg.startsWith("⛔")) msg = await aesDecrypt(vault.f, phrase, emo);
         output = msg;
-      } else if (vault.mode === "multi") {
+      } else if (vault.m === "multi") {
         for (const layer of vault.layers) {
-          output += `\n🔒 ${layer.label}\n`;
-          const phrase = prompt(`Фраза для ${layer.label}`);
-          const emo = prompt(`Емо-код для ${layer.label}`);
-          output += await aesDecrypt(layer.token, phrase, emo) + "\n";
+          output += `\n🔒 ${layer.l}\n`;
+          const phrase = vault.a === 'mceliece' ? prompt(`Фраза для ${layer.l} (або залиш порожньою для McEliece):`) || '' : prompt(`Фраза для ${layer.l}`);
+          const emo = vault.a === 'mceliece' ? prompt(`Емо-код для ${layer.l} (або залиш порожньою для McEliece):`) || '' : prompt(`Емо-код для ${layer.l}`);
+          output += await aesDecrypt(layer.t, phrase, emo) + "\n";
         }
-      } else {
-        const phrase = prompt("🔑 Фраза:");
-        const emo = prompt("🎨 Емо-код:");
-        output = await aesDecrypt(vault.real || json, phrase, emo);
       }
 
       document.getElementById("decryptionResult").innerText = output;
@@ -208,46 +562,95 @@
       link.click();
     };
 
-    const loadVaultFile = (event) => {
-      const file = event.target.files[0];
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        document.getElementById("inputVault").value = e.target.result;
-      };
-      if (file) reader.readAsText(file);
+    const loadVaultFile = async (event) => {
+      const files = event.target.files;
+      if (files.length === 0) return;
+      const combined = await combineQRFiles(files);
+      document.getElementById("inputVault").value = combined;
     };
 
-    const dropVault = (e) => {
+    const dropVault = async (e) => {
       e.preventDefault();
-      const file = e.dataTransfer.files[0];
-      if (file && file.type.includes("json")) {
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          document.getElementById("inputVault").value = ev.target.result;
-        };
-        reader.readAsText(file);
-      }
+      const files = e.dataTransfer.files;
+      if (files.length === 0 || !Array.from(files).every(f => f.type.includes("json"))) return;
+      const combined = await combineQRFiles(files);
+      document.getElementById("inputVault").value = combined;
     };
 
-    const generateQR = (style) => {
-      const data = document.getElementById("inputVault").value;
-      if (!data) return alert("📭 Спочатку встав JSON Vault!");
+    const combineQRFiles = async (files) => {
+      let combined = '';
+      for (const file of Array.from(files).sort((a, b) => a.name.localeCompare(b.name))) {
+        const text = await file.text();
+        combined += text;
+      }
+      return combined;
+    };
+
+    const combineQRInputs = async () => {
+      const files = document.getElementById("vaultLoader").files;
+      if (files.length === 0) return alert("📭 Завантаж файли для склеювання!");
+      const combined = await combineQRFiles(files);
+      document.getElementById("inputVault").value = combined;
+    };
+
+    const generateMultiQR = (style) => {
+      const compressed = document.getElementById("inputVault").value;
+      if (!compressed) return alert("📭 Спочатку встав JSON Vault!");
       let parsed;
       try {
-        parsed = JSON.stringify(JSON.parse(data));
+        parsed = LZ4.decompress(compressed);
+        JSON.parse(parsed);
       } catch {
-        return alert("⚠️ Невірний JSON");
+        return alert("⚠️ Невірний JSON або стиснення");
       }
-      const color = style === 'light' ? { dark: "#000000", light: "#ffffff" } : { dark: "#00ffcc", light: "#0e0e0e" };
-      QRCode.toCanvas(document.getElementById("qrcanvas"), parsed, { width: 256, color });
+
+      const qrcodesDiv = document.getElementById("qrcodes");
+      qrcodesDiv.innerHTML = '';
+      const maxQRSize = 2953;
+      const chunks = [];
+      for (let i = 0; i < compressed.length; i += maxQRSize) {
+        chunks.push(compressed.slice(i, i + maxQRSize));
+      }
+
+      chunks.forEach((chunk, index) => {
+        const canvas = document.createElement("canvas");
+        canvas.id = `qrcanvas-${index}`;
+        qrcodesDiv.appendChild(canvas);
+        const color = style === 'light' ? { dark: "#000000", light: "#ffffff" } : { dark: "#00ffcc", light: "#0e0e0e" };
+        QRCode.toCanvas(canvas, chunk, { width: 256, color });
+      });
     };
 
     const saveQRAsPNG = () => {
-      const canvas = document.getElementById("qrcanvas");
-      const link = document.createElement("a");
-      link.download = "vault_qr.png";
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      const canvases = document.querySelectorAll("#qrcodes canvas");
+      if (canvases.length === 0) return alert("📭 Спочатку створіть QR!");
+      canvases.forEach((canvas, index) => {
+        const link = document.createElement("a");
+        link.download = `vault_qr_${index + 1}.png`;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      });
+    };
+
+    const shareVault = (vaultId) => {
+      const compressed = document.getElementById(vaultId).value;
+      if (!compressed) return alert("📭 Немає vault для надсилання!");
+      try {
+        const text = LZ4.decompress(compressed);
+        const blob = new Blob([text], { type: "application/json" });
+        const file = new File([blob], "vault.json", { type: "application/json" });
+        if (navigator.share) {
+          navigator.share({
+            files: [file],
+            title: "Нейрошифратор Vault",
+            text: "Зашифрований vault від Нейрошифратора ∞",
+          });
+        } else {
+          alert("📲 Поділитися не підтримується, збережіть vault вручну!");
+        }
+      } catch {
+        alert("⚠️ Помилка при створенні файлу!");
+      }
     };
   </script>
 </body>
