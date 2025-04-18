@@ -2,88 +2,268 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8" />
-  <title>Резонометр ∞</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🌌 Резонометр ∞ v4</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0e0e0e">
+  <link rel="icon" href="https://via.placeholder.com/192x192.png?text=🌌" type="image/png">
   <style>
     body {
-      font-family: "Segoe UI", sans-serif;
+      font-family: 'Courier New', monospace;
       background: #0e0e0e;
-      color: #e0e0e0;
-      padding: 20px;
+      color: #00ffcc;
+      padding: 2rem;
+      position: relative;
+      overflow-x: hidden;
+    }
+    #matrix {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      opacity: 0.35;
     }
     input, select, button, textarea {
-      background: #1a1a1a;
-      color: #e0e0e0;
-      border: 1px solid #444;
-      padding: 8px;
-      margin: 5px 0;
+      background: rgba(0,0,0,0.85);
+      color: #00ffcc;
+      border: 1px solid #00ffcc;
+      padding: 0.5rem;
+      margin: 0.5rem 0;
       width: 100%;
+      box-shadow: 0 0 12px #00ffcc, inset 0 0 8px #ff00ff;
+      transition: box-shadow 0.3s;
+      animation: input-glitch 1s infinite;
     }
-    canvas { background: #fff; margin-top: 20px; }
+    input:focus, textarea:focus, select:focus {
+      box-shadow: 0 0 25px #00ffcc, inset 0 0 15px #ff00ff;
+      animation: none;
+    }
+    @keyframes input-glitch {
+      0%, 100% { transform: translate(0); }
+      50% { transform: translate(0.3px, -0.3px); }
+    }
+    button {
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(90deg, #00ffcc, #ff00ff);
+      color: #0e0e0e;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 0.5rem;
+      margin: 0.5rem 0;
+      border: 1px solid #00ffcc;
+      transition: box-shadow 0.3s;
+    }
+    button:hover {
+      box-shadow: 0 0 30px #00ffcc, 0 0 40px #ff00ff;
+      animation: button-glitch 1s infinite;
+    }
+    @keyframes button-glitch {
+      0%, 100% { transform: translate(0); }
+      50% { transform: translate(0.3px, -0.3px); }
+    }
+    .section {
+      border: 1px solid #333;
+      padding: 1rem;
+      margin-bottom: 2rem;
+      background: rgba(0,0,0,0.65);
+      box-shadow: 0 0 15px #00ffcc;
+    }
+    canvas {
+      max-width: 100%;
+      margin-top: 1rem;
+      border: 1px solid #00ffcc;
+      background: #0e0e0e;
+    }
+    .glow { animation: glow 1.2s infinite; }
+    @keyframes glow {
+      0%, 100% { text-shadow: 0 0 8px #00ffcc, 0 0 15px #ff00ff; }
+      50% { text-shadow: 0 0 30px #00ffcc, 0 0 50px #ff00ff; }
+    }
+    .quantum {
+      font-size: 0.9rem;
+      color: #ff00ff;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    #result {
+      animation: typing 0.7s steps(30, end);
+      white-space: pre-wrap;
+      overflow: hidden;
+      color: #00ffcc;
+      text-shadow: 0 0 8px #00ffcc;
+      font-size: 0.95rem;
+      animation: result-glitch 1s infinite;
+    }
+    @keyframes typing {
+      from { width: 0; }
+      to { width: 100%; }
+    }
+    @keyframes result-glitch {
+      0%, 100% { transform: translate(0); }
+      50% { transform: translate(0.3px, -0.3px); }
+    }
+    h1, h2, h3 {
+      text-transform: uppercase;
+      letter-spacing: 5px;
+      animation: header-glitch 1s infinite;
+    }
+    @keyframes header-glitch {
+      0%, 100% { transform: translate(0); }
+      50% { transform: translate(0.3px, -0.3px); }
+    }
+    ul { list-style: none; padding: 0; }
+    li { margin: 5px 0; color: #00ffcc; }
+    label { color: #00ffcc; }
+    pre { white-space: pre-wrap; margin-top: 10px; color: #00ffcc; }
   </style>
 </head>
 <body>
-  <h2>🌌 Резонометр v2</h2>
-  <label>🧠 Введи фразу:</label>
-  <input id="phraseInput" placeholder="слово, фраза або думка" />
+  <h1 class="glow">🌌 Резонометр ∞ v4</h1>
+  <div class="quantum">⚡️ Аналіз резонансу думок</div>
 
-  <label>🎨 Який колір перший спадає на думку?</label>
-  <select id="colorSelect">
-    <option value="теплий">Теплий</option>
-    <option value="холодний">Холодний</option>
-    <option value="сірий">Сірий</option>
-    <option value="яскравий">Яскравий</option>
-  </select>
+  <div class="section">
+    <label>🧠 ВВЕДИ ФРАЗУ:</label>
+    <input id="phraseInput" placeholder="СЛОВО, ФРАЗА АБО ДУМКА" />
 
-  <label>🌫 Як вона відчувається?</label>
-  <select id="feelSelect">
-    <option value="легкість">Легкість</option>
-    <option value="напруга">Напруга</option>
-    <option value="порожнеча">Порожнеча</option>
-    <option value="внутрішній дзвін">Внутрішній дзвін</option>
-  </select>
+    <label>🎨 ЯКИЙ КОЛІР ПЕРШИЙ СПАДАЄ НА ДУМКУ?</label>
+    <select id="colorSelect">
+      <option value="теплий">ТЕПЛИЙ</option>
+      <option value="холодний">ХОЛОДНИЙ</option>
+      <option value="сірий">СІРИЙ</option>
+      <option value="яскравий">ЯСКРАВИЙ</option>
+    </select>
 
-  <label>♻️ Хочеш її повторити?</label>
-  <select id="repeatSelect">
-    <option value="так">Так</option>
-    <option value="ні">Ні</option>
-    <option value="не знаю">Не знаю</option>
-  </select>
+    <label>🌫 ЯК ВОНА ВІДЧУВАЄТЬСЯ?</label>
+    <select id="feelSelect">
+      <option value="легкість">ЛЕГКІСТЬ</option>
+      <option value="напруга">НАПРУГА</option>
+      <option value="порожнеча">ПОРОЖНЕЧА</option>
+      <option value="внутрішній дзвін">ВНУТРІШНІЙ ДЗВІН</option>
+    </select>
 
-  <button onclick="analyze()">🎯 Аналізувати резонанс</button>
+    <label>♻️ ХОЧЕШ ЇЇ ПОВТОРИТИ?</label>
+    <select id="repeatSelect">
+      <option value="так">ТАК</option>
+      <option value="ні">НІ</option>
+      <option value="не знаю">НЕ ЗНАЮ</option>
+    </select>
 
-  <div id="result" style="margin-top: 15px;"></div>
+    <label>😶 ЯКИЙ ЕМОЦІЙНИЙ СТАН ВИКЛИКАЄ ЦЯ ФРАЗА?</label>
+    <select id="emotionSelect">
+      <option value="спокій">СПОКІЙ</option>
+      <option value="тривога">ТРИВОГА</option>
+      <option value="радість">РАДІСТЬ</option>
+      <option value="смуток">СМУТОК</option>
+    </select>
 
-  <h3>📈 Історія</h3>
-  <ul id="history"></ul>
+    <label>⏳ КОЛИ ЦЯ ДУМКА РЕЗОНУЄ НАЙБІЛЬШЕ?</label>
+    <select id="timeSelect">
+      <option value="минуле">МИНУЛЕ</option>
+      <option value="сьогодення">СЬОГОДЕННЯ</option>
+      <option value="майбутнє">МАЙБУТНЄ</option>
+    </select>
 
-  <button onclick="exportVault()">💾 Export to Vault</button>
-  <pre id="vaultOutput" style="white-space: pre-wrap; margin-top: 10px;"></pre>
+    <label>⚡ ЯКА ЕНЕРГІЯ ЦІЄЇ ДУМКИ?</label>
+    <select id="energySelect">
+      <option value="дає енергію">ДАЄ ЕНЕРГІЮ</option>
+      <option value="забирає енергію">ЗАБИРАЄ ЕНЕРГІЮ</option>
+      <option value="нейтральна">НЕЙТРАЛЬНА</option>
+    </select>
 
-  <canvas id="chart" width="400" height="200"></canvas>
+    <label>🌠 ЯКИЙ СИМВОЛ АБО ОБРАЗ СПАДАЄ НА ДУМКУ?</label>
+    <input id="symbolInput" placeholder="НАПРИКЛАД, ЗІРКА, ХВИЛЯ, ДЕРЕВО" />
+
+    <button onclick="analyze()">🎯 АНАЛІЗУВАТИ РЕЗОНАНС</button>
+
+    <div id="result" style="margin-top: 15px;"></div>
+
+    <h3>📈 ІСТОРІЯ</h3>
+    <ul id="history"></ul>
+
+    <button onclick="exportVault()">💾 ЕКСПОРТ У VAULT</button>
+    <button onclick="exportToNeuroShifrator()">🔐 ЕКСПОРТ У НЕЙРОШИФРАТОР</button>
+    <pre id="vaultOutput" style="white-space: pre-wrap; margin-top: 10px;"></pre>
+
+    <canvas id="chart" width="400" height="200"></canvas>
+  </div>
 
   <script>
     let historyData = [];
+
+    // Матричний дощ
+    window.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.id = 'matrix';
+      document.body.appendChild(canvas);
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZабвгґдеєжзиіїйклмнопрстуфхцчшщьюя🧠🔥💧🌕⚡️🌀';
+      const fontSize = 16;
+      const columns = canvas.width / fontSize;
+      const drops = Array(Math.floor(columns)).fill(1);
+
+      function draw() {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#00ffcc';
+        ctx.font = fontSize + 'px monospace';
+        for (let i = 0; i < drops.length; i++) {
+          const text = chars.charAt(Math.floor(Math.random() * chars.length));
+          ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+          if (drops[i] * fontSize > canvas.height && Math.random() > 0.95) drops[i] = 0;
+          drops[i]++;
+        }
+      }
+      setInterval(draw, 35);
+
+      // Реєстрація Service Worker для PWA
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw-resonometer.js')
+          .then(registration => {
+            console.log('Service Worker зареєстровано для Резонометра:', registration);
+          })
+          .catch(error => {
+            console.log('Помилка реєстрації Service Worker:', error);
+          });
+      }
+    };
 
     function analyze() {
       const phrase = document.getElementById('phraseInput').value;
       const color = document.getElementById('colorSelect').value;
       const feel = document.getElementById('feelSelect').value;
       const repeat = document.getElementById('repeatSelect').value;
+      const emotion = document.getElementById('emotionSelect').value;
+      const time = document.getElementById('timeSelect').value;
+      const energy = document.getElementById('energySelect').value;
+      const symbol = document.getElementById('symbolInput').value;
 
       let score = 0;
       if (color === "теплий" || color === "яскравий") score += 1;
       if (feel === "внутрішній дзвін") score += 1;
       if (repeat === "так") score += 1;
+      if (emotion === "радість" || emotion === "спокій") score += 1;
+      if (time === "майбутнє" || time === "сьогодення") score += 1;
+      if (energy === "дає енергію") score += 1;
+      if (symbol.trim() !== "") score += 1;
 
-      let res = "🌑 Відсутність резонансу";
-      if (score === 1) res = "🌗 Частковий резонанс";
-      if (score >= 2) res = "🌕 Повний резонанс";
+      let res = "🌑 ВІДСУТНІСТЬ РЕЗОНАНСУ";
+      if (score >= 1 && score <= 2) res = "🌒 СЛАБКИЙ РЕЗОНАНС";
+      if (score >= 3 && score <= 4) res = "🌓 ПОМІРНИЙ РЕЗОНАНС";
+      if (score >= 5 && score <= 6) res = "🌔 СИЛЬНИЙ РЕЗОНАНС";
+      if (score === 7) res = "🌕 АБСОЛЮТНИЙ РЕЗОНАНС";
 
       const now = new Date().toLocaleTimeString();
-      const record = { phrase, color, feel, repeat, score, res, time: now };
+      const record = { phrase, color, feel, repeat, emotion, time, energy, symbol, score, res, time: now };
       historyData.push(record);
 
-      document.getElementById('result').innerHTML = `<b>${res}</b><br><i>${phrase}</i> (${now})`;
+      document.getElementById('result').innerHTML = `<b>${res}</b><br><i>${phrase}</i> (${now})<br>БАЛ: ${score}/7`;
 
       updateHistory();
       drawChart();
@@ -94,7 +274,7 @@
       list.innerHTML = "";
       historyData.slice(-10).reverse().forEach(r => {
         const li = document.createElement('li');
-        li.textContent = `[${r.time}] ${r.phrase} — ${r.res}`;
+        li.textContent = `[${r.time}] ${r.phrase} — ${r.res} (БАЛ: ${r.score}/7)`;
         list.appendChild(li);
       });
     }
@@ -104,13 +284,13 @@
       const ctx = canvas.getContext("2d");
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.beginPath();
-      ctx.strokeStyle = "#00ffff";
+      ctx.strokeStyle = "#00ffcc";
       ctx.lineWidth = 2;
 
       let step = canvas.width / Math.max(1, historyData.length - 1);
       historyData.forEach((r, i) => {
         const x = i * step;
-        const y = canvas.height - (r.score / 3) * canvas.height;
+        const y = canvas.height - (r.score / 7) * canvas.height;
         if (i === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       });
@@ -124,6 +304,16 @@
       };
       const output = JSON.stringify(vault, null, 2);
       document.getElementById("vaultOutput").textContent = output;
+    }
+
+    function exportToNeuroShifrator() {
+      const vault = {
+        type: "resonometer",
+        entries: historyData
+      };
+      const output = JSON.stringify(vault, null, 2);
+      localStorage.setItem("resonometerVault", output);
+      window.location.href = "index.html";
     }
   </script>
 </body>
