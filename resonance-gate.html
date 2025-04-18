@@ -69,6 +69,7 @@
     let startTime = Date.now();
 
     const selected = questions.sort(() => 0.5 - Math.random()).slice(0, 7);
+    const ritualMode = localStorage.getItem("ritualMode") === "true";
 
     function showQuestion() {
       if (index >= selected.length) return evaluate();
@@ -103,7 +104,7 @@
         if (good.includes(x.a)) score++;
       });
 
-      let state = "", emoji = "", msg = "";
+      let state = "", msg = "";
       if (score >= 5 && fast < 3) {
         state = "🌕 Повний резонанс";
         msg = "Ти на частоті. Вітаю.";
@@ -115,15 +116,25 @@
         msg = "Твоя хвиля ще не збіглась.";
       }
 
-      result.innerHTML = `<b>${state}</b><br><br>🧬 Твій резогліф: <i>${glyph.join(" + ")}</i><br>🌀 ${msg}`;
       const payload = {
         glyph,
         timestamp: new Date().toISOString(),
         resonance: state
       };
+
+      localStorage.setItem("resoglyph", JSON.stringify(payload));
+      localStorage.setItem("resonanceState", state);
+
+      result.innerHTML = `<b>${state}</b><br><br>🧬 Твій резогліф: <i>${glyph.join(" + ")}</i><br>🌀 ${msg}`;
       exportBox.style.display = "block";
       exportBox.textContent = JSON.stringify(payload, null, 2);
       downloadBtn.style.display = "inline-block";
+
+      if (ritualMode) {
+        setTimeout(() => {
+          window.open("resonance-passport.html", "_blank");
+        }, 2000);
+      }
     }
 
     function downloadJSON() {
