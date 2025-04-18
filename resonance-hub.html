@@ -5,15 +5,30 @@
   <title>🌀 Resonance Hub</title>
   <style>
     body {
-      background: #0d0d0d;
+      background: #0c0c0c;
       color: #e0e0e0;
-      font-family: 'Segoe UI', sans-serif;
+      font-family: 'Segoe UI', Arial, sans-serif;
       padding: 50px 30px;
       max-width: 800px;
       margin: auto;
       text-align: center;
+      position: relative;
+      overflow: hidden;
     }
-    h1 { font-size: 2em; margin-bottom: 30px; }
+    #matrix {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.1;
+      z-index: -1;
+    }
+    h1 {
+      font-size: 2em;
+      margin-bottom: 30px;
+      animation: glitch 3s infinite;
+    }
     button {
       background: #1a1a1a;
       color: #eee;
@@ -23,23 +38,50 @@
       cursor: pointer;
       font-size: 1em;
       width: 80%;
+      animation: glitch 5s infinite;
+      transition: transform 0.2s;
     }
     button:hover {
       background: #333;
+      transform: scale(1.05);
     }
     .desc {
       font-size: 0.95em;
       margin-bottom: 20px;
       color: #aaa;
     }
+    hr {
+      margin: 40px 0;
+      border: 1px dashed #444;
+    }
     footer {
       margin-top: 60px;
       font-size: 0.8em;
       color: #555;
+      animation: glitch 5s infinite;
+    }
+    canvas {
+      display: block;
+      margin: 20px auto;
+      animation: pulse 6s infinite;
+    }
+    @keyframes glitch {
+      0% { transform: translate(0); opacity: 1; }
+      2% { transform: translate(1px, 1px); opacity: 0.95; }
+      4% { transform: translate(-1px, -1px); opacity: 0.95; }
+      6% { transform: translate(0); opacity: 1; }
+      100% { transform: translate(0); opacity: 1; }
+    }
+    @keyframes pulse {
+      0% { filter: brightness(1); }
+      50% { filter: brightness(1.5); }
+      100% { filter: brightness(1); }
     }
   </style>
 </head>
 <body>
+  <canvas id="matrix"></canvas>
+  <canvas id="symbol" width="100" height="100"></canvas>
   <h1>🌀 Resonance Hub</h1>
   <p class="desc">Це точка збору. Відкрий резонанс, створи паспорт, перевір себе.</p>
 
@@ -58,7 +100,7 @@
     <span class="desc">Зʼясуй, чи все ще ти є собою</span>
   </button>
 
-  <hr style="margin: 40px 0; border: 1px dashed #444;">
+  <hr>
 
   <button onclick="startFullRitual()">
     🌕 Повний Ритуал<br>
@@ -67,17 +109,83 @@
 
   <footer>created with 💠 by Ти & Резонанс</footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/kyber-js@0.2.0/dist/kyber.min.js"></script>
   <script>
+    // Matrix rain
+    const matrixCanvas = document.getElementById("matrix");
+    const ctx = matrixCanvas.getContext("2d");
+    matrixCanvas.height = window.innerHeight;
+    matrixCanvas.width = window.innerWidth;
+    const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ🌀";
+    const fontSize = 10;
+    const columns = matrixCanvas.width / fontSize;
+    const drops = Array(Math.floor(columns)).fill(1);
+    function drawMatrix() {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+      ctx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
+      ctx.fillStyle = "#0ff";
+      ctx.font = `${fontSize}px monospace`;
+      drops.forEach((y, i) => {
+        const text = chars.charAt(Math.floor(Math.random() * chars.length));
+        const x = i * fontSize;
+        ctx.fillText(text, x, y * fontSize);
+        if (y * fontSize > matrixCanvas.height && Math.random() > 0.975) drops[i] = 0;
+        drops[i]++;
+      });
+    }
+    setInterval(drawMatrix, 50);
+
+    // Symbol animation
+    const symbolCanvas = document.getElementById("symbol");
+    const sCtx = symbolCanvas.getContext("2d");
+    let rotation = 0;
+    function drawSymbol() {
+      sCtx.clearRect(0, 0, symbolCanvas.width, symbolCanvas.height);
+      sCtx.save();
+      sCtx.translate(50, 50);
+      sCtx.rotate((rotation * Math.PI) / 180);
+      sCtx.fillStyle = "#0ff";
+      sCtx.font = "50px sans-serif";
+      sCtx.textAlign = "center";
+      sCtx.textBaseline = "middle";
+      sCtx.fillText("🌀", 0, 0);
+      sCtx.restore();
+      rotation += 1;
+      if (rotation >= 360) rotation = 0;
+    }
+    setInterval(drawSymbol, 16);
+
+    async function signData(data) {
+      const encoder = new TextEncoder();
+      const hash = btoa(String.fromCharCode(...encoder.encode(data)));
+      return hash.slice(0, 32);
+    }
+
     function openTool(file) {
       window.open(file, "_blank");
     }
 
-    function startFullRitual() {
-      // очищення перед циклом
-      localStorage.removeItem("resoglyph");
-      localStorage.removeItem("resonanceState");
-      localStorage.setItem("ritualMode", "true");
-      window.open("resonance-gate.html", "_blank");
+    async function startFullRitual() {
+      try {
+        localStorage.removeItem("resoglyph");
+        localStorage.removeItem("resonanceState");
+        localStorage.removeItem("identityCheckResult");
+        localStorage.setItem("ritualMode", "true");
+        localStorage.setItem("ritualStage", "gate");
+        const ritualData = {
+          startTime: new Date().toISOString(),
+          stage: "gate"
+        };
+        const kyber = new Kyber.Kyber512();
+        const { publicKey, secretKey } = await kyber.keygen();
+        const encrypted = await kyber.encrypt(publicKey, JSON.stringify(ritualData));
+        const encryptedStr = btoa(String.fromCharCode(...encrypted));
+        const signature = await signData(encryptedStr);
+        localStorage.setItem("ritualData", JSON.stringify({ encrypted: encryptedStr, signature, publicKey: btoa(String.fromCharCode(...publicKey)) }));
+        window.open("resonance-gate.html", "_blank");
+      } catch (e) {
+        alert("Помилка запуску ритуалу: " + e.message);
+      }
     }
   </script>
 </body>
