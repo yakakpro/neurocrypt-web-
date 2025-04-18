@@ -36,12 +36,13 @@
 </head>
 <body>
   <h2>🔁 Перевірка Резонансної Тотожності</h2>
-  <p style="text-align:center;">Завантаж паспорт та введи свій гліф — чи все ще ти це ти?</p>
+  <p style="text-align:center;">Завантаж паспорт або продовж з памʼяті — і введи гліф для перевірки.</p>
 
-  <h3>1️⃣ Завантаж паспорт (.json):</h3>
-  <input type="file" accept=".json" onchange="loadPassport(event)" />
+  <h3>1️⃣ Завантаж паспорт:</h3>
+  <input type="file" accept=".json" onchange="loadPassport(event)">
+  <button id="loadLocalBtn" onclick="useLocalPassport()" style="display:none;">📂 Продовжити з збереженого паспорта</button>
 
-  <h3>2️⃣ Введи гліф (через +):</h3>
+  <h3>2️⃣ Введи гліф вручну (через +):</h3>
   <textarea id="userGlyph" rows="2" placeholder="приклад: вода+ніч+дзвін+🌑+мить"></textarea>
 
   <button onclick="checkIdentity()">✅ Перевірити тотожність</button>
@@ -51,11 +52,27 @@
 
   <script>
     let passport = null;
+    const local = localStorage.getItem("resonance-passport");
+
+    if (local) {
+      document.getElementById("loadLocalBtn").style.display = "block";
+    }
+
+    function useLocalPassport() {
+      try {
+        passport = JSON.parse(local);
+        document.getElementById("passportRaw").textContent = JSON.stringify(passport, null, 2);
+        document.getElementById("passportRaw").style.display = "block";
+      } catch (e) {
+        alert("Помилка при завантаженні паспорта з памʼяті.");
+      }
+    }
 
     function loadPassport(e) {
       const reader = new FileReader();
       reader.onload = function () {
         passport = JSON.parse(reader.result);
+        localStorage.setItem("resonance-passport", reader.result);
         document.getElementById("passportRaw").textContent = JSON.stringify(passport, null, 2);
         document.getElementById("passportRaw").style.display = "block";
       };
