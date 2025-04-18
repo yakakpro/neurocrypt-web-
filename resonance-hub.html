@@ -65,6 +65,12 @@
       margin: 20px auto;
       animation: pulse 6s infinite;
     }
+    #progress {
+      font-size: 1.1em;
+      margin: 20px 0;
+      color: #0ff;
+      animation: glitch 5s infinite;
+    }
     @keyframes glitch {
       0% { transform: translate(0); opacity: 1; }
       2% { transform: translate(1px, 1px); opacity: 0.95; }
@@ -83,7 +89,7 @@
   <canvas id="matrix"></canvas>
   <canvas id="symbol" width="100" height="100"></canvas>
   <h1>🌀 Resonance Hub</h1>
-  <p class="desc">Це точка збору. Відкрий резонанс, створи паспорт, перевір себе.</p>
+  <p class="desc">Це точка збору. Відкрий резонанс, створи паспорт, перевір себе, об’єднайся з мережею.</p>
 
   <button onclick="openTool('resonance-gate.html')">
     🧠 Пройти капчу<br>
@@ -100,13 +106,24 @@
     <span class="desc">Зʼясуй, чи все ще ти є собою</span>
   </button>
 
+  <button onclick="openTool('validate.html')">
+    🔍 Валідатор<br>
+    <span class="desc">Технічно підтвердь валідність твого паспорта</span>
+  </button>
+
+  <button onclick="openTool('resonance-club.html')">
+    🌐 Клуб Резонансників<br>
+    <span class="desc">Об’єднай свій гліф із мережею резонансників</span>
+  </button>
+
   <hr>
 
   <button onclick="startFullRitual()">
     🌕 Повний Ритуал<br>
-    <span class="desc">Пройди всі етапи автоматично — капча → паспорт → перевірка</span>
+    <span class="desc">Пройди всі етапи автоматично — капча → паспорт → перевірка → клуб</span>
   </button>
 
+  <div id="progress"></div>
   <footer>created with 💠 by Ти & Резонанс</footer>
 
   <script src="https://cdn.jsdelivr.net/npm/kyber-js@0.2.0/dist/kyber.min.js"></script>
@@ -155,10 +172,31 @@
     }
     setInterval(drawSymbol, 16);
 
+    // Progress tracker
+    const progressDiv = document.getElementById("progress");
+    function updateProgress() {
+      const stage = localStorage.getItem("ritualStage");
+      const messages = {
+        gate: "🧠 Ти на етапі капчі... Відкрий свою частоту.",
+        passport: "🪪 Створюєш паспорт... Твій гліф кристалізується.",
+        verify: "🔁 Перевіряєш тотожність... Чи ти все ще собою?",
+        club: "🌐 Приєднуєшся до Клубу... Твій гліф резонує з мережею.",
+        completed: "🌕 Ритуал завершено! Ти в гармонії з космосом."
+      };
+      progressDiv.textContent = stage ? messages[stage] || "🌑 Ритуал у процесі..." : "";
+    }
+    setInterval(updateProgress, 1000);
+
     async function signData(data) {
       const encoder = new TextEncoder();
       const hash = btoa(String.fromCharCode(...encoder.encode(data)));
       return hash.slice(0, 32);
+    }
+
+    async function verifySignature(data, signature) {
+      const encoder = new TextEncoder();
+      const computed = btoa(String.fromCharCode(...encoder.encode(data))).slice(0, 32);
+      return computed === signature;
     }
 
     function openTool(file) {
@@ -170,6 +208,7 @@
         localStorage.removeItem("resoglyph");
         localStorage.removeItem("resonanceState");
         localStorage.removeItem("identityCheckResult");
+        localStorage.removeItem("resonanceNetwork");
         localStorage.setItem("ritualMode", "true");
         localStorage.setItem("ritualStage", "gate");
         const ritualData = {
@@ -181,6 +220,10 @@
         const encrypted = await kyber.encrypt(publicKey, JSON.stringify(ritualData));
         const encryptedStr = btoa(String.fromCharCode(...encrypted));
         const signature = await signData(encryptedStr);
+        const isValid = await verifySignature(encryptedStr, signature);
+        if (!isValid) {
+          throw new Error("Помилка підпису ритуалу.");
+        }
         localStorage.setItem("ritualData", JSON.stringify({ encrypted: encryptedStr, signature, publicKey: btoa(String.fromCharCode(...publicKey)) }));
         window.open("resonance-gate.html", "_blank");
       } catch (e) {
