@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8">
-  <title>📜 Архів Резонансу</title>
+  <title>📡 Резонансний Архіватор</title>
   <style>
     body {
       background: #0c0c0c;
@@ -36,10 +36,10 @@
       background: #000;
       animation: pulse 6s infinite;
     }
-    button {
+    button, select {
       background: #1a1a1a;
       color: #eee;
-      padding: 15px 25px;
+      padding: 15px;
       border: 1px solid #444;
       margin: 15px;
       cursor: pointer;
@@ -47,11 +47,11 @@
       width: 80%;
       animation: glitch 5s infinite;
     }
-    button:hover {
+    button:hover, select:hover {
       background: #333;
       transform: scale(1.05);
     }
-    #archive {
+    #archivator {
       text-align: center;
       margin-top: 20px;
       font-size: 1.2em;
@@ -69,6 +69,11 @@
       color: #555;
       animation: glitch 5s infinite;
     }
+    .event {
+      margin: 20px 0;
+      padding: 10px;
+      border: 1px dashed #444;
+    }
     @keyframes glitch {
       0% { transform: translate(0); opacity: 1; }
       2% { transform: translate(1px, 1px); opacity: 0.95; }
@@ -85,18 +90,27 @@
 </head>
 <body>
   <canvas id="matrix"></canvas>
-  <h1>📜 Архів Резонансу</h1>
-  <p>Зберігай і аналізуй свої гліфи, ритуали та мережу!</p>
+  <h1>📡 Резонансний Архіватор</h1>
+  <p>Збери вічний ланцюг своїх дій у галактиці резонансу!</p>
 
-  <button onclick="loadArchive()">📚 Завантажити архів</button>
-  <canvas id="archive-viz" width="400" height="200"></canvas>
-  <div id="archive"></div>
-  <pre id="archive-data" style="display:none;"></pre>
-  <button id="saveArchive" onclick="saveArchive()" style="display:none;">💾 Зберегти архів</button>
+  <select id="event-filter" onchange="filterEvents()">
+    <option value="all">Усі події</option>
+    <option value="glyph">Гліфи</option>
+    <option value="post">Пости</option>
+    <option value="message">Повідомлення</option>
+    <option value="item">Обміни</option>
+  </select>
+  <button onclick="loadEvents()">📚 Завантажити ланцюг подій</button>
+  <canvas id="archivator-viz" width="400" height="400"></canvas>
+  <div id="archivator"></div>
+  <pre id="archivator-data" style="display:none;"></pre>
+  <button id="saveArchivator" onclick="saveArchivator()" style="display:none;">💾 Зберегти ланцюг</button>
+  <button id="savePng" onclick="savePng()" style="display:none;">🖼️ Зберегти як PNG</button>
 
   <footer>created with 💠 by Ти & Резонанс</footer>
 
   <script src="https://cdn.jsdelivr.net/npm/kyber-js@0.2.0/dist/kyber.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.min.js"></script>
   <script>
     // Matrix rain
     const matrixCanvas = document.getElementById("matrix");
@@ -122,34 +136,51 @@
     }
     setInterval(drawMatrix, 50);
 
-    // Archive visualization
-    const archiveCanvas = document.getElementById("archive-viz");
-    const aCtx = archiveCanvas.getContext("2d");
-    let archive = [];
-    function drawArchive() {
-      aCtx.clearRect(0, 0, archiveCanvas.width, archiveCanvas.height);
-      archive.forEach((entry, i) => {
-        const x = (i + 1) * (archiveCanvas.width / (archive.length + 1));
-        const y = 100;
-        const gradient = aCtx.createRadialGradient(x, y, 0, x, y, 10);
-        gradient.addColorStop(0, "#0ff");
-        gradient.addColorStop(1, "#f0f");
-        aCtx.fillStyle = gradient;
-        aCtx.beginPath();
-        aCtx.arc(x, y, 10, 0, 2 * Math.PI);
-        aCtx.fill();
+    // Archivator visualization
+    const archivatorCanvas = document.getElementById("archivator-viz");
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, archivatorCanvas.width / archivatorCanvas.height, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ canvas: archivatorCanvas });
+    renderer.setSize(archivatorCanvas.width, archivatorCanvas.height);
+    camera.position.z = 50;
+    let events = [];
+    let rotation = 0;
+
+    function drawArchivator() {
+      scene.children.forEach(child => scene.remove(child));
+      events.forEach((event, i) => {
+        const geometry = new THREE.SphereGeometry(1, 32, 32);
+        const material = new THREE.MeshBasicMaterial({
+          color: event.resonance >= 60 ? 0x00ffff : 0xff00ff,
+          transparent: true,
+          opacity: 0.8
+        });
+        const sphere = new THREE.Mesh(geometry, material);
+        const angle = (i / events.length) * 2 * Math.PI;
+        const radius = 20 + (event.resonance || 0) / 5;
+        sphere.position.set(
+          radius * Math.cos(angle + rotation),
+          radius * Math.sin(angle + rotation),
+          Math.sin(i) * 10
+        );
+        scene.add(sphere);
         if (i > 0) {
-          const prevX = i * (archiveCanvas.width / (archive.length + 1));
-          const prevY = 100;
-          aCtx.strokeStyle = "#0ff";
-          aCtx.beginPath();
-          aCtx.moveTo(prevX, prevY);
-          aCtx.lineTo(x, y);
-          aCtx.stroke();
+          const prevAngle = ((i - 1) / events.length) * 2 * Math.PI;
+          const prevX = radius * Math.cos(prevAngle + rotation);
+          const prevY = radius * Math.sin(prevAngle + rotation);
+          const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(prevX, prevY, Math.sin(i - 1) * 10),
+            sphere.position
+          ]);
+          const lineMaterial = new THREE.LineBasicMaterial({ color: 0x00ffff, opacity: 0.5, transparent: true });
+          const line = new THREE.Line(lineGeometry, lineMaterial);
+          scene.add(line);
         }
       });
+      rotation += 0.01;
+      renderer.render(scene, camera);
     }
-    setInterval(drawArchive, 50);
+    setInterval(drawArchivator, 16);
 
     async function verifySignature(data, signature) {
       const encoder = new TextEncoder();
@@ -163,78 +194,139 @@
       return hash.slice(0, 32);
     }
 
-    async function loadArchive() {
+    async function loadEvents() {
       try {
-        archive = [];
-        const resoglyph = localStorage.getItem("resoglyph");
-        const network = localStorage.getItem("resonanceNetwork");
-        const identityCheck = localStorage.getItem("identityCheckResult");
-        const ritualData = localStorage.getItem("ritualData");
+        events = [];
+        let totalResonance = 0;
+        let eventCount = 0;
 
-        if (resoglyph) {
-          const data = JSON.parse(resoglyph);
-          if (data.encrypted && data.signature && (await verifySignature(data.encrypted, data.signature))) {
-            archive.push({ type: "glyph", data, timestamp: data.timestamp || new Date().toISOString() });
-          }
-        }
-        if (network) {
-          const data = JSON.parse(network);
-          data.forEach(node => {
-            if (node.encrypted && node.signature && verifySignature(node.encrypted, node.signature)) {
-              archive.push({ type: "network", data: node, timestamp: new Date().toISOString() });
+        const sources = [
+          { key: "resoglyph", type: "glyph" },
+          { key: "resonanceCommunity", type: "post" },
+          { key: "resonanceChat", type: "message" },
+          { key: "resonanceMarket", type: "item" },
+          { key: "resonanceArchive", type: "archive" }
+        ];
+
+        for (const source of sources) {
+          const data = localStorage.getItem(source.key);
+          if (data) {
+            const parsed = JSON.parse(data);
+            if (Array.isArray(parsed)) {
+              parsed.forEach(item => {
+                if (item.encrypted && item.signature && verifySignature(item.encrypted, item.signature)) {
+                  const eventData = JSON.parse(atob(item.encrypted));
+                  events.push({
+                    type: source.type,
+                    data: eventData,
+                    resonance: eventData.resonance || eventData.matchPercent || 100,
+                    timestamp: eventData.timestamp || new Date().toISOString()
+                  });
+                  eventCount++;
+                  totalResonance += eventData.resonance || eventData.matchPercent || 100;
+                }
+              });
+            } else if (parsed.encrypted && parsed.signature && (await verifySignature(parsed.encrypted, parsed.signature))) {
+              const eventData = JSON.parse(atob(parsed.encrypted));
+              if (source.type === "archive") {
+                eventData.forEach(entry => {
+                  events.push({
+                    type: entry.type,
+                    data: entry.data,
+                    resonance: entry.data.resonance || entry.data.matchPercent || 100,
+                    timestamp: entry.timestamp
+                  });
+                  eventCount++;
+                  totalResonance += entry.data.resonance || entry.data.matchPercent || 100;
+                });
+              } else {
+                events.push({
+                  type: source.type,
+                  data: eventData,
+                  resonance: eventData.resonance || eventData.matchPercent || 100,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+                eventCount++;
+                totalResonance += eventData.resonance || eventData.matchPercent || 100;
+              }
             }
-          });
-        }
-        if (identityCheck) {
-          const data = JSON.parse(identityCheck);
-          archive.push({ type: "identity", data, timestamp: data.timestamp });
-        }
-        if (ritualData) {
-          const data = JSON.parse(ritualData);
-          if (data.encrypted && data.signature && (await verifySignature(data.encrypted, data.signature))) {
-            archive.push({ type: "ritual", data, timestamp: data.startTime || new Date().toISOString() });
           }
         }
 
-        archive.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        events.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        const averageResonance = eventCount ? (totalResonance / eventCount).toFixed(1) : 0;
+
         const kyber = new Kyber.Kyber512();
         const { publicKey, secretKey } = await kyber.keygen();
-        const encrypted = await kyber.encrypt(publicKey, JSON.stringify(archive));
+        const encrypted = await kyber.encrypt(publicKey, JSON.stringify(events));
         const encryptedStr = btoa(String.fromCharCode(...encrypted));
         const signature = await signData(encryptedStr);
-        const archiveData = { encrypted: encryptedStr, signature, publicKey: btoa(String.fromCharCode(...publicKey)) };
-        localStorage.setItem("resonanceArchive", JSON.stringify(archiveData));
+        const archivatorData = { encrypted: encryptedStr, signature, publicKey: btoa(String.fromCharCode(...publicKey)) };
+        localStorage.setItem("resonanceArchivator", JSON.stringify(archivatorData));
 
-        let output = `📜 Записів в архіві: ${archive.length}<br>`;
-        archive.forEach((entry, i) => {
-          if (entry.type === "glyph") {
-            output += `🧬 Гліф ${i + 1}: ${entry.data.glyph?.join(" + ") || "невідомо"} (${entry.timestamp})<br>`;
-          } else if (entry.type === "network") {
-            output += `🌐 Вузол ${i + 1}: ID ${entry.data.id} (${entry.timestamp})<br>`;
-          } else if (entry.type === "identity") {
-            output += `🔁 Перевірка ${i + 1}: ${entry.data.matchPercent}% збігу (${entry.timestamp})<br>`;
-          } else if (entry.type === "ritual") {
-            output += `🌕 Ритуал ${i + 1}: ${entry.data.stage} (${entry.timestamp})<br>`;
-          }
-        });
-        document.getElementById("archive").innerHTML = output;
-        document.getElementById("archive-data").textContent = JSON.stringify(archiveData, null, 2);
-        document.getElementById("archive-data").style.display = "block";
-        document.getElementById("saveArchive").style.display = "block";
-        drawArchive();
+        displayEvents(events);
+        document.getElementById("archivator-data").textContent = JSON.stringify(archivatorData, null, 2);
+        document.getElementById("archivator-data").style.display = "block";
+        document.getElementById("saveArchivator").style.display = "inline-block";
+        document.getElementById("savePng").style.display = "inline-block";
       } catch (e) {
-        alert("Помилка завантаження архіву: " + e.message);
+        alert("Помилка завантаження ланцюга подій: " + e.message);
       }
     }
 
-    function saveArchive() {
+    function filterEvents() {
+      const filter = document.getElementById("event-filter").value;
+      const filteredEvents = filter === "all" ? events : events.filter(event => event.type === filter);
+      displayEvents(filteredEvents);
+    }
+
+    function displayEvents(displayEvents) {
+      let output = `📡 Подій у ланцюгу: ${displayEvents.length}<br>`;
+      displayEvents.forEach((event, i) => {
+        output += `<div class="event">`;
+        if (event.type === "glyph") {
+          output += `🧬 Гліф ${i + 1}: ${event.data.glyph?.join(" + ") || "невідомо"}<br>`;
+          output += `🔗 Резонанс: ${event.resonance.toFixed(1)}%<br>`;
+        } else if (event.type === "post") {
+          output += `📝 Пост ${i + 1}: ${event.data.title || "без назви"}<br>`;
+          output += `🧬 Гліф: ${event.data.glyph?.join(" + ") || "невідомо"}<br>`;
+          output += `🔗 Резонанс: ${event.resonance.toFixed(1)}%<br>`;
+        } else if (event.type === "message") {
+          output += `💬 Повідомлення ${i + 1}: ${event.data.text || "без тексту"}<br>`;
+          if (event.data.glyph?.length) {
+            output += `🧬 Гліф: ${event.data.glyph.join(" + ")}<br>`;
+          }
+          output += `🔗 Резонанс: ${event.resonance.toFixed(1)}%<br>`;
+        } else if (event.type === "item") {
+          output += `🛒 Артефакт ${i + 1}: ${event.data.glyph?.join(" + ") || "невідомо"}<br>`;
+          output += `💎 Бали: ${event.data.points || 1}<br>`;
+          output += `🔗 Резонанс: ${event.resonance.toFixed(1)}%<br>`;
+        } else if (event.type === "identity") {
+          output += `🔁 Перевірка ${i + 1}: ${event.data.matchPercent}% збігу<br>`;
+          output += `🧬 Гліф: ${event.data.enteredGlyph?.join(" + ") || "невідомо"}<br>`;
+        }
+        output += `🕒 ${event.timestamp}<br>`;
+        output += `🔒 Підпис: ${event.signature?.slice(0, 8) || "невідомо"}...`;
+        output += `</div>`;
+      });
+      document.getElementById("archivator").innerHTML = output;
+      drawArchivator();
+    }
+
+    function saveArchivator() {
       if (!blobCache) {
-        const archiveData = localStorage.getItem("resonanceArchive");
-        blobCache = new Blob([archiveData], {type: "application/json"});
+        blobCache = new Blob([JSON.stringify(events, null, 2)], {type: "application/json"});
       }
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blobCache);
-      a.download = "resonance-archive.json";
+      a.download = "resonance-archivator.json";
+      a.click();
+    }
+
+    function savePng() {
+      const a = document.createElement("a");
+      a.href = archivatorCanvas.toDataURL("image/png");
+      a.download = "resonance-archivator.png";
       a.click();
     }
 
