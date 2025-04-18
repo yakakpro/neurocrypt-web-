@@ -12,17 +12,15 @@
       max-width: 800px;
       margin: auto;
     }
-    h2, h3 { text-align: center; }
+    h2 { text-align: center; }
     button, input[type="file"] {
       background: #1a1a1a;
       color: #eee;
       padding: 10px;
       border: 1px solid #444;
-      margin-top: 10px;
-      cursor: pointer;
+      margin: 10px auto;
       display: block;
-      margin-left: auto;
-      margin-right: auto;
+      cursor: pointer;
     }
     canvas {
       display: block;
@@ -41,9 +39,10 @@
 </head>
 <body>
   <h2>🪪 Створити Резонанс-Паспорт</h2>
-  <p style="text-align:center;">Завантаж резогліф або виконай ритуал автоматично.</p>
+  <p style="text-align:center;">Завантаж файл або використай збережений гліф.</p>
 
   <input type="file" accept=".json" onchange="loadGlyph(event)">
+  <button id="loadLocalBtn" onclick="useLocalGlyph()" style="display:none;">🧬 Продовжити з резогліфом</button>
   <canvas id="viz" width="200" height="200"></canvas>
   <div id="info"></div>
   <button id="saveBtn" onclick="downloadPassport()" style="display:none;">💾 Зберегти Паспорт</button>
@@ -58,8 +57,24 @@
       "Світло знає тебе навіть у темряві."
     ];
 
-    const ritualMode = localStorage.getItem("ritualMode") === "true";
-    const savedGlyph = localStorage.getItem("resoglyph");
+    const localGlyphRaw = localStorage.getItem("resoglyph");
+
+    if (localGlyphRaw) {
+      document.getElementById("loadLocalBtn").style.display = "block";
+    }
+
+    function useLocalGlyph() {
+      try {
+        const parsed = JSON.parse(localGlyphRaw);
+        if (parsed && parsed.glyph) {
+          generatePassport(parsed.glyph);
+        } else {
+          alert("Недійсний гліф у памʼяті.");
+        }
+      } catch (e) {
+        alert("Помилка при читанні локального гліфа.");
+      }
+    }
 
     function hashGlyph(glyph) {
       return btoa(glyph.join('-')).slice(0, 24);
@@ -98,12 +113,6 @@
       document.getElementById("passportData").textContent = JSON.stringify(passport, null, 2);
       document.getElementById("saveBtn").style.display = "block";
       drawViz(id);
-
-      if (ritualMode) {
-        setTimeout(() => {
-          window.open("resonance-verify.html", "_blank");
-        }, 3000);
-      }
     }
 
     function loadGlyph(e) {
@@ -123,16 +132,6 @@
       a.href = URL.createObjectURL(blob);
       a.download = "resonance-passport.json";
       a.click();
-    }
-
-    // автозапуск ритуального гліфа з localStorage
-    if (ritualMode && savedGlyph) {
-      try {
-        const parsed = JSON.parse(savedGlyph);
-        if (parsed.glyph) generatePassport(parsed.glyph);
-      } catch (e) {
-        console.warn("Неможливо зчитати resoglyph");
-      }
     }
   </script>
 </body>
