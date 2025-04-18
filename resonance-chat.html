@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>💬 Резонансний Чат</title>
+  <style>
+    body {
+      background: #0c0c0c;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      padding: 50px 30px;
+      max-width: 800px;
+      margin: auto;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    #matrix {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.1;
+      z-index: -1;
+    }
+    h1 {
+      font-size: 2em;
+      margin-bottom: 30px;
+      animation: glitch 3s infinite;
+    }
+    canvas {
+      display: block;
+      margin: 20px auto;
+      border: 1px solid #555;
+      background: #000;
+      animation: pulse 6s infinite;
+    }
+    button, input[type="file"], input[type="text"], textarea {
+      background: #1a1a1a;
+      color: #eee;
+      padding: 15px;
+      border: 1px solid #444;
+      margin: 15px;
+      cursor: pointer;
+      font-size: 1em;
+      width: 80%;
+      animation: glitch 5s infinite;
+    }
+    button:hover, input:hover, textarea:hover {
+      background: #333;
+      transform: scale(1.05);
+    }
+    #chat {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 1.2em;
+      animation: glitch 5s infinite;
+    }
+    pre {
+      background: #111;
+      padding: 10px;
+      overflow-x: auto;
+      margin-top: 20px;
+    }
+    footer {
+      margin-top: 60px;
+      font-size: 0.8em;
+      color: #555;
+      animation: glitch 5s infinite;
+    }
+    .message {
+      margin: 20px 0;
+      padding: 10px;
+      border: 1px dashed #444;
+    }
+    @keyframes glitch {
+      0% { transform: translate(0); opacity: 1; }
+      2% { transform: translate(1px, 1px); opacity: 0.95; }
+      4% { transform: translate(-1px, -1px); opacity: 0.95; }
+      6% { transform: translate(0); opacity: 1; }
+      100% { transform: translate(0); opacity: 1; }
+    }
+    @keyframes pulse {
+      0% { filter: brightness(1); }
+      50% { filter: brightness(1.5); }
+      100% { filter: brightness(1); }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="matrix"></canvas>
+  <h1>💬 Резонансний Чат</h1>
+  <p>Спілкуйся, ділися гліфами, резонуй у реальному часі!</p>
+
+  <input type="file" accept=".json" onchange="loadPassport(event)">
+  <input type="text" id="message-text" placeholder="Твоє повідомлення">
+  <button onclick="sendMessage()">📨 Надіслати повідомлення</button>
+  <canvas id="chat-viz" width="400" height="400"></canvas>
+  <div id="chat"></div>
+  <pre id="chat-data" style="display:none;"></pre>
+  <button id="saveChat" onclick="saveChat()" style="display:none;">💾 Зберегти чат</button>
+  <button id="savePng" onclick="savePng()" style="display:none;">🖼️ Зберегти як PNG</button>
+
+  <footer>created with 💠 by Ти & Резонанс</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/kyber-js@0.2.0/dist/kyber.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.min.js"></script>
+  <script>
+    // Matrix rain
+    const matrixCanvas = document.getElementById("matrix");
+    const ctx = matrixCanvas.getContext("2d");
+    matrixCanvas.height = window.innerHeight;
+    matrixCanvas.width = window.innerWidth;
+    const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ🌀";
+    const fontSize = 10;
+    const columns = matrixCanvas.width / fontSize;
+    const drops = Array(Math.floor(columns)).fill(1);
+    function drawMatrix() {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+      ctx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
+      ctx.fillStyle = "#0ff";
+      ctx.font = `${fontSize}px monospace`;
+      drops.forEach((y, i) => {
+        const text = chars.charAt(Math.floor(Math.random() * chars.length));
+        const x = i * fontSize;
+        ctx.fillText(text, x, y * fontSize);
+        if (y * fontSize > matrixCanvas.height && Math.random() > 0.975) drops[i] = 0;
+        drops[i]++;
+      });
+    }
+    setInterval(drawMatrix, 50);
+
+    // Chat visualization
+    const chatCanvas = document.getElementById("chat-viz");
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, chatCanvas.width / chatCanvas.height, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ canvas: chatCanvas });
+    renderer.setSize(chatCanvas.width, chatCanvas.height);
+    camera.position.z = 50;
+    let messages = JSON.parse(localStorage.getItem("resonanceChat")) || [];
+    let rotation = 0;
+
+    function drawChat() {
+      scene.children.forEach(child => scene.remove(child));
+      messages.forEach((msg, i) => {
+        const geometry = new THREE.SphereGeometry(1, 32, 32);
+        const material = new THREE.MeshBasicMaterial({
+          color: msg.resonance >= 60 ? 0x00ffff : 0xff00ff,
+          transparent: true,
+          opacity: 0.8
+        });
+        const sphere = new THREE.Mesh(geometry, material);
+        const angle = (i / messages.length) * 2 * Math.PI;
+        const radius = 20 + (msg.resonance || 0) / 5;
+        sphere.position.set(
+          radius * Math.cos(angle + rotation),
+          radius * Math.sin(angle + rotation),
+          Math.sin(i) * 10
+        );
+        scene.add(sphere);
+        messages.forEach((otherMsg, j) => {
+          if (i < j) {
+            const match = msg.glyph ? msg.glyph.filter(x => otherMsg.glyph?.includes(x)).length : 0;
+            const percent = msg.glyph ? Math.round((match / msg.glyph.length) * 100) : 60;
+            if (percent >= 60) {
+              const otherAngle = (j / messages.length) * 2 * Math.PI;
+              const otherX = radius * Math.cos(otherAngle + rotation);
+              const otherY = radius * Math.sin(otherAngle + rotation);
+              const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+                sphere.position,
+                new THREE.Vector3(otherX, otherY, Math.sin(j) * 10)
+              ]);
+              const lineMaterial = new THREE.LineBasicMaterial({ color: 0x00ffff, opacity: 0.5, transparent: true });
+              const line = new THREE.Line(lineGeometry, lineMaterial);
+              scene.add(line);
+            }
+          }
+        });
+      });
+      rotation += 0.01;
+      renderer.render(scene, camera);
+    }
+    setInterval(drawChat, 16);
+
+    async function verifySignature(data, signature) {
+      const encoder = new TextEncoder();
+      const computed = btoa(String.fromCharCode(...encoder.encode(data))).slice(0, 32);
+      return computed === signature;
+    }
+
+    async function signData(data) {
+      const encoder = new TextEncoder();
+      const hash = btoa(String.fromCharCode(...encoder.encode(data)));
+      return hash.slice(0, 32);
+    }
+
+    async function loadPassport(e) {
+      const reader = new FileReader();
+      reader.onload = async function () {
+        try {
+          const data = JSON.parse(reader.result);
+          if (!data.encrypted || !data.signature) {
+            throw new Error("Некоректний паспорт.");
+          }
+          const isValid = await verifySignature(data.encrypted, data.signature);
+          if (!isValid) {
+            throw new Error("Підпис невалідний.");
+          }
+          passport = data;
+          document.getElementById("chat").innerHTML = "📜 Паспорт завантажено!";
+        } catch (e) {
+          alert("Помилка при завантаженні паспорта: " + e.message);
+        }
+      };
+      reader.readAsText(e.target.files[0]);
+    }
+
+    async function sendMessage() {
+      try {
+        const text = document.getElementById("message-text").value.trim();
+        if (!text) {
+          alert("Введи повідомлення!");
+          return;
+        }
+        let glyph = [];
+        let resonance = 60; // Default resonance
+        if (passport) {
+          glyph = passport.glyph || (passport.encrypted ? JSON.parse(atob(passport.encrypted)).glyph : []);
+          if (!glyph.length) {
+            throw new Error("Гліф порожній або некоректний.");
+          }
+          let totalMatch = 0;
+          let comparisons = 0;
+          messages.forEach(msg => {
+            if (msg.glyph) {
+              const match = glyph.filter(x => msg.glyph.includes(x)).length;
+              totalMatch += Math.round((match / glyph.length) * 100);
+              comparisons++;
+            }
+          });
+          resonance = comparisons ? totalMatch / comparisons : 100;
+        }
+        const messageData = {
+          text,
+          glyph,
+          resonance,
+          timestamp: new Date().toISOString()
+        };
+        const kyber = new Kyber.Kyber512();
+        const { publicKey, secretKey } = await kyber.keygen();
+        const encrypted = await kyber.encrypt(publicKey, JSON.stringify(messageData));
+        const encryptedStr = btoa(String.fromCharCode(...encrypted));
+        const signature = await signData(encryptedStr);
+        const finalMessage = { encrypted: encryptedStr, signature, publicKey: btoa(String.fromCharCode(...publicKey)) };
+        messages.push(finalMessage);
+        localStorage.setItem("resonanceChat", JSON.stringify(messages));
+        displayMessages();
+        document.getElementById("chat-data").textContent = JSON.stringify(messages, null, 2);
+        document.getElementById("chat-data").style.display = "block";
+        document.getElementById("saveChat").style.display = "inline-block";
+        document.getElementById("savePng").style.display = "inline-block";
+        document.getElementById("message-text").value = "";
+      } catch (e) {
+        alert("Помилка надсилання повідомлення: " + e.message);
+      }
+    }
+
+    function displayMessages() {
+      let output = `💬 Повідомлень у чаті: ${messages.length}<br>`;
+      messages.forEach((msg, i) => {
+        const data = msg.encrypted ? JSON.parse(atob(msg.encrypted)) : {};
+        output += `<div class="message">`;
+        output += `${data.text || `Повідомлення ${i + 1}`}<br>`;
+        if (data.glyph?.length) {
+          output += `🧬 Гліф: ${data.glyph.join(" + ")}<br>`;
+        }
+        output += `🔗 Резонанс: ${data.resonance?.toFixed(1)}%<br>`;
+        output += `🕒 ${data.timestamp || "невідомо"}<br>`;
+        output += `🔒 Підпис: ${msg.signature.slice(0, 8)}...`;
+        output += `</div>`;
+      });
+      document.getElementById("chat").innerHTML = output;
+      drawChat();
+    }
+
+    function saveChat() {
+      if (!blobCache) {
+        blobCache = new Blob([JSON.stringify(messages, null, 2)], {type: "application/json"});
+      }
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blobCache);
+      a.download = "resonance-chat.json";
+      a.click();
+    }
+
+    function savePng() {
+      const a = document.createElement("a");
+      a.href = chatCanvas.toDataURL("image/png");
+      a.download = "resonance-chat.png";
+      a.click();
+    }
+
+    let passport = null;
+    let blobCache = null;
+    displayMessages();
+  </script>
+</body>
+</html>
