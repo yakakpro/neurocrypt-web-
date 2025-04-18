@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>🌠 Резонансний Космос</title>
+  <style>
+    body {
+      background: #0c0c0c;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      padding: 50px 30px;
+      max-width: 800px;
+      margin: auto;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    #matrix {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.1;
+      z-index: -1;
+    }
+    h1 {
+      font-size: 2em;
+      margin-bottom: 30px;
+      animation: glitch 3s infinite;
+    }
+    canvas {
+      display: block;
+      margin: 20px auto;
+      border: 1px solid #555;
+      background: #000;
+      animation: pulse 6s infinite;
+    }
+    button, input[type="file"], input[type="number"], select {
+      background: #1a1a1a;
+      color: #eee;
+      padding: 15px;
+      border: 1px solid #444;
+      margin: 15px;
+      cursor: pointer;
+      font-size: 1em;
+      width: 80%;
+      animation: glitch 5s infinite;
+    }
+    button:hover, input:hover, select:hover {
+      background: #333;
+      transform: scale(1.05);
+    }
+    #cosmos {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 1.2em;
+      animation: glitch 5s infinite;
+    }
+    pre {
+      background: #111;
+      padding: 10px;
+      overflow-x: auto;
+      margin-top: 20px;
+    }
+    footer {
+      margin-top: 60px;
+      font-size: 0.8em;
+      color: #555;
+      animation: glitch 5s infinite;
+    }
+    .controls {
+      margin: 20px 0;
+    }
+    @keyframes glitch {
+      0% { transform: translate(0); opacity: 1; }
+      2% { transform: translate(1px, 1px); opacity: 0.95; }
+      4% { transform: translate(-1px, -1px); opacity: 0.95; }
+      6% { transform: translate(0); opacity: 1; }
+      100% { transform: translate(0); opacity: 1; }
+    }
+    @keyframes pulse {
+      0% { filter: brightness(1); }
+      50% { filter: brightness(1.5); }
+      100% { filter: brightness(1); }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="matrix"></canvas>
+  <h1>🌠 Резонансний Космос</h1>
+  <p>Об’єднай сингуляри в багатовселенній екосистемі!</p>
+
+  <div class="controls">
+    <input type="file" accept=".json" id="singularity-file" onchange="loadSingularity(event)">
+    <input type="number" id="resonance-threshold" placeholder="Поріг резонансу (0-100)" min="0" max="100">
+    <select id="connection-type">
+      <option value="resonance">Резонанс</option>
+      <option value="glyph">Сумісність гліфів</option>
+      <option value="hybrid">Гібрид</option>
+    </select>
+    <button onclick="connectCosmos()">🔗 Запустити космос</button>
+    <button onclick="clearCosmos()">🗑️ Очистити космос</button>
+    <button onclick="saveScene()">📍 Зберегти сцену</button>
+  </div>
+  <canvas id="cosmos-viz" width="400" height="400"></canvas>
+  <div id="cosmos"></div>
+  <pre id="cosmos-data" style="display:none;"></pre>
+  <button id="saveCosmos" onclick="saveCosmos()" style="display:none;">💾 Зберегти космос</button>
+  <button id="savePng" onclick="savePng()" style="display:none;">🖼️ Зберегти як PNG</button>
+
+  <footer>created with 💠 by Ти & Резонанс</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/kyber-js@0.2.0/dist/kyber.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.min.js"></script>
+  <script>
+    // Matrix rain
+    const matrixCanvas = document.getElementById("matrix");
+    const ctx = matrixCanvas.getContext("2d");
+    matrixCanvas.height = window.innerHeight;
+    matrixCanvas.width = window.innerWidth;
+    const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ🌀";
+    const fontSize = 10;
+    const columns = matrixCanvas.width / fontSize;
+    const drops = Array(Math.floor(columns)).fill(1);
+    function drawMatrix() {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+      ctx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
+      ctx.fillStyle = "#0ff";
+      ctx.font = `${fontSize}px monospace`;
+      drops.forEach((y, i) => {
+        const text = chars.charAt(Math.floor(Math.random() * chars.length));
+        const x = i * fontSize;
+        ctx.fillText(text, x, y * fontSize);
+        if (y * fontSize > matrixCanvas.height && Math.random() > 0.975) drops[i] = 0;
+        drops[i]++;
+      });
+    }
+    setInterval(drawMatrix, 50);
+
+    // Cosmos visualization
+    const cosmosCanvas = document.getElementById("cosmos-viz");
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, cosmosCanvas.width / cosmosCanvas.height, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ canvas: cosmosCanvas });
+    renderer.setSize(cosmosCanvas.width, cosmosCanvas.height);
+    camera.position.z = 50;
+    let singularities = [];
+    let scenes = [];
+    let cosmosRunning = false;
+    let rotation = 0;
+
+    function drawCosmos() {
+      if (!cosmosRunning) return;
+      scene.children.forEach(child => scene.remove(child));
+      singularities.forEach((singularity, sIdx) => {
+        const coreGeometry = new THREE.SphereGeometry(2, 32, 32);
+        const coreMaterial = new THREE.MeshBasicMaterial({
+          color: 0x00ffff,
+          transparent: true,
+          opacity: 0.9
+        });
+        const core = new THREE.Mesh(coreGeometry, coreMaterial);
+        const radius = 20 + sIdx * 10;
+        core.position.set(
+          radius * Math.cos(rotation + sIdx),
+          radius * Math.sin(rotation + sIdx),
+          Math.sin(sIdx) * 10
+        );
+        core.userData = singularity;
+        scene.add(core);
+        singularity.elements.forEach((element, i) => {
+          const geometry = new THREE.SphereGeometry(0.5, 16, 16);
+          const material = new THREE.MeshBasicMaterial({
+            color: element.resonance >= 60 ? 0x00ffff : 0xff00ff,
+            transparent: true,
+            opacity: 0.6
+          });
+          const sphere = new THREE.Mesh(geometry, material);
+          const angle = (i / singularity.elements.length) * 2 * Math.PI;
+          const subRadius = 5 + (element.resonance || 0) / 10;
+          sphere.position.set(
+            core.position.x + subRadius * Math.cos(angle + rotation),
+            core.position.y + subRadius * Math.sin(angle + rotation),
+            core.position.z + Math.sin(i) * 2
+          );
+          scene.add(sphere);
+          const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+            sphere.position,
+            core.position
+          ]);
+          const lineMaterial = new THREE.LineBasicMaterial({ color: 0x00ffff, opacity: 0.3, transparent: true });
+          const line = new THREE.Line(lineGeometry, lineMaterial);
+          scene.add(line);
+        });
+        singularities.forEach((otherSingularity, oIdx) => {
+          if (sIdx < oIdx) {
+            let matchPercent = 0;
+            if (singularity.connectionType === "glyph" || singularity.connectionType === "hybrid") {
+              const allGlyphs = singularity.elements.filter(e => e.glyph).flatMap(e => e.glyph);
+              const otherGlyphs = otherSingularity.elements.filter(e => e.glyph).flatMap(e => e.glyph);
+              const matches = allGlyphs.filter(g => otherGlyphs.includes(g)).length;
+              matchPercent = allGlyphs.length ? (matches / allGlyphs.length) * 100 : 0;
+            }
+            if (singularity.connectionType === "resonance" || singularity.connectionType === "hybrid") {
+              const avgResonance = (singularity.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / singularity.elements.length +
+                                  otherSingularity.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / otherSingularity.elements.length) / 2;
+              matchPercent = Math.max(matchPercent, avgResonance);
+            }
+            if (matchPercent >= singularity.threshold) {
+              const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+                core.position,
+                new THREE.Vector3(
+                  (20 + oIdx * 10) * Math.cos(rotation + oIdx),
+                  (20 + oIdx * 10) * Math.sin(rotation + oIdx),
+                  Math.sin(oIdx) * 10
+                )
+              ]);
+              const lineMaterial = new THREE.LineBasicMaterial({ color: 0x00ffff, opacity: 0.2, transparent: true });
+              const line = new THREE.Line(lineGeometry, lineMaterial);
+              scene.add(line);
+            }
+          }
+        });
+      });
+      rotation += 0.01;
+      renderer.render(scene, camera);
+    }
+    setInterval(drawCosmos, 16);
+
+    // Mouse click interaction
+    cosmosCanvas.addEventListener('click', (event) => {
+      const mouse = new THREE.Vector2(
+        (event.clientX / cosmosCanvas.clientWidth) * 2 - 1,
+        -(event.clientY / cosmosCanvas.clientHeight) * 2 + 1
+      );
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(scene.children);
+      if (intersects.length > 0) {
+        const singularity = intersects[0].object.userData;
+        if (singularity) {
+          let output = `<br>📍 Вибрано сингуляр: ${singularity.timestamp}<br>`;
+          output += `🌌 Елементів: ${singularity.elements.length}<br>`;
+          output += `🔗 Середній резонанс: ${singularity.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / singularity.elements.length}%`;
+          document.getElementById("cosmos").innerHTML += output;
+        }
+      }
+    });
+
+    async function verifySignature(data, signature) {
+      const encoder = new TextEncoder();
+      const computed = btoa(String.fromCharCode(...encoder.encode(data))).slice(0, 32);
+      return computed === signature;
+    }
+
+    async function signData(data) {
+      const encoder = new TextEncoder();
+      const hash = btoa(String.fromCharCode(...encoder.encode(data)));
+      return hash.slice(0, 32);
+    }
+
+    async function loadSingularity(event) {
+      try {
+        const reader = new FileReader();
+        reader.onload = async function () {
+          const data = JSON.parse(reader.result);
+          if (!data.encrypted || !data.signature) {
+            throw new Error("Некоректний сингуляр.");
+          }
+          const isValid = await verifySignature(data.encrypted, data.signature);
+          if (!isValid) {
+            throw new Error("Підпис невалідний.");
+          }
+          const singularityData = JSON.parse(atob(data.encrypted));
+          if (!singularityData.elements) {
+            throw new Error("Немає елементів у сингулярі.");
+          }
+          singularities.push({
+            elements: singularityData.elements,
+            threshold: singularityData.threshold || 60,
+            connectionType: singularityData.fusionType || "resonance",
+            timestamp: singularityData.timestamp || new Date().toISOString()
+          });
+          displaySingularities();
+          document.getElementById("cosmos").innerHTML += "<br>⚫ Сингуляр завантажено!";
+        };
+        reader.readAsText(event.target.files[0]);
+      } catch (e) {
+        alert("Помилка завантаження сингуляру: " + e.message);
+      }
+    }
+
+    async function connectCosmos() {
+      if (singularities.length < 1) {
+        alert("Завантаж хоча б один сингуляр для запуску космосу!");
+        return;
+      }
+      try {
+        const threshold = parseInt(document.getElementById("resonance-threshold").value) || 60;
+        const connectionType = document.getElementById("connection-type").value;
+        if (threshold < 0 || threshold > 100) {
+          alert("Поріг резонансу має бути від 0 до 100!");
+          return;
+        }
+        singularities.forEach(singularity => {
+          singularity.threshold = threshold;
+          singularity.connectionType = connectionType;
+        });
+        cosmosRunning = true;
+        const cosmosData = {
+          singularities,
+          scenes,
+          threshold,
+          connectionType,
+          timestamp: new Date().toISOString()
+        };
+        const kyber = new Kyber.Kyber512();
+        const { publicKey, secretKey } = await kyber.keygen();
+        const encrypted = await kyber.encrypt(publicKey, JSON.stringify(cosmosData));
+        const encryptedStr = btoa(String.fromCharCode(...encrypted));
+        const signature = await signData(encryptedStr);
+        const finalCosmos = { encrypted: encryptedStr, signature, publicKey: btoa(String.fromCharCode(...publicKey)) };
+        localStorage.setItem("resonanceCosmos", JSON.stringify(finalCosmos));
+        displaySingularities();
+        document.getElementById("cosmos-data").textContent = JSON.stringify(finalCosmos, null, 2);
+        document.getElementById("cosmos-data").style.display = "block";
+        document.getElementById("saveCosmos").style.display = "inline-block";
+        document.getElementById("savePng").style.display = "inline-block";
+      } catch (e) {
+        alert("Помилка запуску космосу: " + e.message);
+      }
+    }
+
+    function clearCosmos() {
+      singularities = [];
+      scenes = [];
+      cosmosRunning = false;
+      document.getElementById("cosmos").innerHTML = "🌠 Космос очищено!";
+      document.getElementById("cosmos-data").style.display = "none";
+      document.getElementById("saveCosmos").style.display = "none";
+      document.getElementById("savePng").style.display = "none";
+      scene.children.forEach(child => scene.remove(child));
+      renderer.render(scene, camera);
+    }
+
+    function displaySingularities() {
+      let totalElements = singularities.reduce((sum, s) => sum + s.elements.length, 0);
+      let output = `🌠 Сингулярів у космосі: ${singularities.length}<br>`;
+      output += `📍 Елементів: ${totalElements}<br>`;
+      singularities.forEach((singularity, sIdx) => {
+        output += `<div class="singularity">`;
+        output += `⚫ Сингуляр ${sIdx + 1}: ${singularity.elements.length} елементів<br>`;
+        output += `🔗 Поріг з’єднання: ${singularity.threshold}%<br>`;
+        output += `📏 Тип з’єднання: ${singularity.connectionType}<br>`;
+        output += `🕒 ${singularity.timestamp}<br>`;
+        singularity.elements.forEach((element, i) => {
+          output += `📍 Елемент ${i + 1}: ${element.name || element.description || "невідомо"}<br>`;
+          if (element.type === "glyph") {
+            output += `🧬 Гліф: ${element.glyph.join(" + ")}<br>`;
+            output += `🔗 Резонанс: ${element.resonance}%<br>`;
+          } else if (element.type === "network") {
+            output += `🌐 Мережа: ${element.nodes.length} вузлів<br>`;
+          } else if (element.type === "rule") {
+            output += `📏 Тип правила: ${element.ruleType}<br>`;
+            output += `🔗 Поріг: ${element.threshold}%`;
+          }
+        });
+        output += `</div>`;
+      });
+      document.getElementById("cosmos").innerHTML = output;
+    }
+
+    function saveScene() {
+      if (!cosmosRunning) {
+        alert("Спочатку запусти космос!");
+        return;
+      }
+      const sceneData = {
+        singularities: singularities.map(s => ({
+          elements: s.elements.length,
+          resonance: s.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / s.elements.length
+        })),
+        timestamp: new Date().toISOString()
+      };
+      scenes.push(sceneData);
+      document.getElementById("cosmos").innerHTML += `<br>📍 Сцену збережено: ${sceneData.timestamp}`;
+    }
+
+    function saveCosmos() {
+      if (!blobCache) {
+        blobCache = new Blob([JSON.stringify({ singularities, scenes }, null, 2)], {type: "application/json"});
+      }
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blobCache);
+      a.download = "resonance-cosmos.json";
+      a.click();
+    }
+
+    function savePng() {
+      const a = document.createElement("a");
+      a.href = cosmosCanvas.toDataURL("image/png");
+      a.download = "resonance-cosmos.png";
+      a.click();
+    }
+
+    let blobCache = null;
+  </script>
+</body>
+</html>
