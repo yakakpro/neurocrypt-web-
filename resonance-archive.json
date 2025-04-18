@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>📜 Архів Резонансу</title>
+  <style>
+    body {
+      background: #0c0c0c;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      padding: 50px 30px;
+      max-width: 800px;
+      margin: auto;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    #matrix {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.1;
+      z-index: -1;
+    }
+    h1 {
+      font-size: 2em;
+      margin-bottom: 30px;
+      animation: glitch 3s infinite;
+    }
+    canvas {
+      display: block;
+      margin: 20px auto;
+      border: 1px solid #555;
+      background: #000;
+      animation: pulse 6s infinite;
+    }
+    button {
+      background: #1a1a1a;
+      color: #eee;
+      padding: 15px 25px;
+      border: 1px solid #444;
+      margin: 15px;
+      cursor: pointer;
+      font-size: 1em;
+      width: 80%;
+      animation: glitch 5s infinite;
+    }
+    button:hover {
+      background: #333;
+      transform: scale(1.05);
+    }
+    #archive {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 1.2em;
+      animation: glitch 5s infinite;
+    }
+    pre {
+      background: #111;
+      padding: 10px;
+      overflow-x: auto;
+      margin-top: 20px;
+    }
+    footer {
+      margin-top: 60px;
+      font-size: 0.8em;
+      color: #555;
+      animation: glitch 5s infinite;
+    }
+    @keyframes glitch {
+      0% { transform: translate(0); opacity: 1; }
+      2% { transform: translate(1px, 1px); opacity: 0.95; }
+      4% { transform: translate(-1px, -1px); opacity: 0.95; }
+      6% { transform: translate(0); opacity: 1; }
+      100% { transform: translate(0); opacity: 1; }
+    }
+    @keyframes pulse {
+      0% { filter: brightness(1); }
+      50% { filter: brightness(1.5); }
+      100% { filter: brightness(1); }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="matrix"></canvas>
+  <h1>📜 Архів Резонансу</h1>
+  <p>Зберігай і аналізуй свої гліфи, ритуали та мережу!</p>
+
+  <button onclick="loadArchive()">📚 Завантажити архів</button>
+  <canvas id="archive-viz" width="400" height="200"></canvas>
+  <div id="archive"></div>
+  <pre id="archive-data" style="display:none;"></pre>
+  <button id="saveArchive" onclick="saveArchive()" style="display:none;">💾 Зберегти архів</button>
+
+  <footer>created with 💠 by Ти & Резонанс</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/kyber-js@0.2.0/dist/kyber.min.js"></script>
+  <script>
+    // Matrix rain
+    const matrixCanvas = document.getElementById("matrix");
+    const ctx = matrixCanvas.getContext("2d");
+    matrixCanvas.height = window.innerHeight;
+    matrixCanvas.width = window.innerWidth;
+    const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ🌀";
+    const fontSize = 10;
+    const columns = matrixCanvas.width / fontSize;
+    const drops = Array(Math.floor(columns)).fill(1);
+    function drawMatrix() {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+      ctx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
+      ctx.fillStyle = "#0ff";
+      ctx.font = `${fontSize}px monospace`;
+      drops.forEach((y, i) => {
+        const text = chars.charAt(Math.floor(Math.random() * chars.length));
+        const x = i * fontSize;
+        ctx.fillText(text, x, y * fontSize);
+        if (y * fontSize > matrixCanvas.height && Math.random() > 0.975) drops[i] = 0;
+        drops[i]++;
+      });
+    }
+    setInterval(drawMatrix, 50);
+
+    // Archive visualization
+    const archiveCanvas = document.getElementById("archive-viz");
+    const aCtx = archiveCanvas.getContext("2d");
+    let archive = [];
+    function drawArchive() {
+      aCtx.clearRect(0, 0, archiveCanvas.width, archiveCanvas.height);
+      archive.forEach((entry, i) => {
+        const x = (i + 1) * (archiveCanvas.width / (archive.length + 1));
+        const y = 100;
+        const gradient = aCtx.createRadialGradient(x, y, 0, x, y, 10);
+        gradient.addColorStop(0, "#0ff");
+        gradient.addColorStop(1, "#f0f");
+        aCtx.fillStyle = gradient;
+        aCtx.beginPath();
+        aCtx.arc(x, y, 10, 0, 2 * Math.PI);
+        aCtx.fill();
+        if (i > 0) {
+          const prevX = i * (archiveCanvas.width / (archive.length + 1));
+          const prevY = 100;
+          aCtx.strokeStyle = "#0ff";
+          aCtx.beginPath();
+          aCtx.moveTo(prevX, prevY);
+          aCtx.lineTo(x, y);
+          aCtx.stroke();
+        }
+      });
+    }
+    setInterval(drawArchive, 50);
+
+    async function verifySignature(data, signature) {
+      const encoder = new TextEncoder();
+      const computed = btoa(String.fromCharCode(...encoder.encode(data))).slice(0, 32);
+      return computed === signature;
+    }
+
+    async function signData(data) {
+      const encoder = new TextEncoder();
+      const hash = btoa(String.fromCharCode(...encoder.encode(data)));
+      return hash.slice(0, 32);
+    }
+
+    async function loadArchive() {
+      try {
+        archive = [];
+        const resoglyph = localStorage.getItem("resoglyph");
+        const network = localStorage.getItem("resonanceNetwork");
+        const identityCheck = localStorage.getItem("identityCheckResult");
+        const ritualData = localStorage.getItem("ritualData");
+
+        if (resoglyph) {
+          const data = JSON.parse(resoglyph);
+          if (data.encrypted && data.signature && (await verifySignature(data.encrypted, data.signature))) {
+            archive.push({ type: "glyph", data, timestamp: data.timestamp || new Date().toISOString() });
+          }
+        }
+        if (network) {
+          const data = JSON.parse(network);
+          data.forEach(node => {
+            if (node.encrypted && node.signature && verifySignature(node.encrypted, node.signature)) {
+              archive.push({ type: "network", data: node, timestamp: new Date().toISOString() });
+            }
+          });
+        }
+        if (identityCheck) {
+          const data = JSON.parse(identityCheck);
+          archive.push({ type: "identity", data, timestamp: data.timestamp });
+        }
+        if (ritualData) {
+          const data = JSON.parse(ritualData);
+          if (data.encrypted && data.signature && (await verifySignature(data.encrypted, data.signature))) {
+            archive.push({ type: "ritual", data, timestamp: data.startTime || new Date().toISOString() });
+          }
+        }
+
+        archive.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        const kyber = new Kyber.Kyber512();
+        const { publicKey, secretKey } = await kyber.keygen();
+        const encrypted = await kyber.encrypt(publicKey, JSON.stringify(archive));
+        const encryptedStr = btoa(String.fromCharCode(...encrypted));
+        const signature = await signData(encryptedStr);
+        const archiveData = { encrypted: encryptedStr, signature, publicKey: btoa(String.fromCharCode(...publicKey)) };
+        localStorage.setItem("resonanceArchive", JSON.stringify(archiveData));
+
+        let output = `📜 Записів в архіві: ${archive.length}<br>`;
+        archive.forEach((entry, i) => {
+          if (entry.type === "glyph") {
+            output += `🧬 Гліф ${i + 1}: ${entry.data.glyph?.join(" + ") || "невідомо"} (${entry.timestamp})<br>`;
+          } else if (entry.type === "network") {
+            output += `🌐 Вузол ${i + 1}: ID ${entry.data.id} (${entry.timestamp})<br>`;
+          } else if (entry.type === "identity") {
+            output += `🔁 Перевірка ${i + 1}: ${entry.data.matchPercent}% збігу (${entry.timestamp})<br>`;
+          } else if (entry.type === "ritual") {
+            output += `🌕 Ритуал ${i + 1}: ${entry.data.stage} (${entry.timestamp})<br>`;
+          }
+        });
+        document.getElementById("archive").innerHTML = output;
+        document.getElementById("archive-data").textContent = JSON.stringify(archiveData, null, 2);
+        document.getElementById("archive-data").style.display = "block";
+        document.getElementById("saveArchive").style.display = "block";
+        drawArchive();
+      } catch (e) {
+        alert("Помилка завантаження архіву: " + e.message);
+      }
+    }
+
+    function saveArchive() {
+      if (!blobCache) {
+        const archiveData = localStorage.getItem("resonanceArchive");
+        blobCache = new Blob([archiveData], {type: "application/json"});
+      }
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blobCache);
+      a.download = "resonance-archive.json";
+      a.click();
+    }
+
+    let blobCache = null;
+  </script>
+</body>
+</html>
