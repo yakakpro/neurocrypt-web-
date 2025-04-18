@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>🛠️ Резонансний Конструктор</title>
+  <style>
+    body {
+      background: #0c0c0c;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      padding: 50px 30px;
+      max-width: 800px;
+      margin: auto;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    #matrix {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.1;
+      z-index: -1;
+    }
+    h1 {
+      font-size: 2em;
+      margin-bottom: 30px;
+      animation: glitch 3s infinite;
+    }
+    canvas {
+      display: block;
+      margin: 20px auto;
+      border: 1px solid #555;
+      background: #000;
+      animation: pulse 6s infinite;
+    }
+    button, input[type="number"], input[type="text"], select {
+      background: #1a1a1a;
+      color: #eee;
+      padding: 15px;
+      border: 1px solid #444;
+      margin: 15px;
+      cursor: pointer;
+      font-size: 1em;
+      width: 80%;
+      animation: glitch 5s infinite;
+    }
+    button:hover, input:hover, select:hover {
+      background: #333;
+      transform: scale(1.05);
+    }
+    #constructor {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 1.2em;
+      animation: glitch 5s infinite;
+    }
+    pre {
+      background: #111;
+      padding: 10px;
+      overflow-x: auto;
+      margin-top: 20px;
+    }
+    footer {
+      margin-top: 60px;
+      font-size: 0.8em;
+      color: #555;
+      animation: glitch 5s infinite;
+    }
+    .controls {
+      margin: 20px 0;
+    }
+    @keyframes glitch {
+      0% { transform: translate(0); opacity: 1; }
+      2% { transform: translate(1px, 1px); opacity: 0.95; }
+      4% { transform: translate(-1px, -1px); opacity: 0.95; }
+      6% { transform: translate(0); opacity: 1; }
+      100% { transform: translate(0); opacity: 1; }
+    }
+    @keyframes pulse {
+      0% { filter: brightness(1); }
+      50% { filter: brightness(1.5); }
+      100% { filter: brightness(1); }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="matrix"></canvas>
+  <h1>🛠️ Резонансний Конструктор</h1>
+  <p>Створюй власні резонансні мережі та світи!</p>
+
+  <div class="controls">
+    <input type="text" id="node-name" placeholder="Назва вузла">
+    <input type="number" id="resonance-strength" placeholder="Сила резонансу (0-100)" min="0" max="100">
+    <input type="number" id="connection-strength" placeholder="Сила зв’язку (0-1)" min="0" max="1" step="0.1">
+    <select id="glyph-source">
+      <option value="manual">Вручну</option>
+      <option value="existing">Існуючий гліф</option>
+    </select>
+    <input type="text" id="glyph-input" placeholder="Гліф (наприклад: вода + ніч + 🌀)">
+    <button onclick="addNode()">➕ Додати вузол</button>
+    <button onclick="buildNetwork()">▶️ Побудувати мережу</button>
+    <button onclick="clearNetwork()">🗑️ Очистити мережу</button>
+  </div>
+  <canvas id="constructor-viz" width="400" height="400"></canvas>
+  <div id="constructor"></div>
+  <pre id="constructor-data" style="display:none;"></pre>
+  <button id="saveConstructor" onclick="saveConstructor()" style="display:none;">💾 Зберегти мережу</button>
+  <button id="savePng" onclick="savePng()" style="display:none;">🖼️ Зберегти як PNG</button>
+
+  <footer>created with 💠 by Ти & Резонанс</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/kyber-js@0.2.0/dist/kyber.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.min.js"></script>
+  <script>
+    // Matrix rain
+    const matrixCanvas = document.getElementById("matrix");
+    const ctx = matrixCanvas.getContext("2d");
+    matrixCanvas.height = window.innerHeight;
+    matrixCanvas.width = window.innerWidth;
+    const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ🌀";
+    const fontSize = 10;
+    const columns = matrixCanvas.width / fontSize;
+    const drops = Array(Math.floor(columns)).fill(1);
+    function drawMatrix() {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+      ctx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
+      ctx.fillStyle = "#0ff";
+      ctx.font = `${fontSize}px monospace`;
+      drops.forEach((y, i) => {
+        const text = chars.charAt(Math.floor(Math.random() * chars.length));
+        const x = i * fontSize;
+        ctx.fillText(text, x, y * fontSize);
+        if (y * fontSize > matrixCanvas.height && Math.random() > 0.975) drops[i] = 0;
+        drops[i]++;
+      });
+    }
+    setInterval(drawMatrix, 50);
+
+    // Constructor visualization
+    const constructorCanvas = document.getElementById("constructor-viz");
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, constructorCanvas.width / constructorCanvas.height, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ canvas: constructorCanvas });
+    renderer.setSize(constructorCanvas.width, constructorCanvas.height);
+    camera.position.z = 50;
+    let nodes = [];
+    let rotation = 0;
+    let networkBuilt = false;
+
+    function drawConstructor() {
+      if (!networkBuilt) return;
+      scene.children.forEach(child => scene.remove(child));
+      nodes.forEach((node, i) => {
+        const geometry = new THREE.SphereGeometry(1, 32, 32);
+        const material = new THREE.MeshBasicMaterial({
+          color: node.resonance >= 60 ? 0x00ffff : 0xff00ff,
+          transparent: true,
+          opacity: 0.8
+        });
+        const sphere = new THREE.Mesh(geometry, material);
+        const angle = (i / nodes.length) * 2 * Math.PI;
+        const radius = 20 + node.resonance / 5;
+        sphere.position.set(
+          radius * Math.cos(angle + rotation),
+          radius * Math.sin(angle + rotation),
+          Math.sin(i) * 10
+        );
+        scene.add(sphere);
+        nodes.forEach((otherNode, j) => {
+          if (i < j) {
+            const match = node.glyph.filter(x => otherNode.glyph.includes(x)).length;
+            const percent = Math.round((match / node.glyph.length) * 100);
+            if (percent * node.connectionStrength >= 60) {
+              const otherAngle = (j / nodes.length) * 2 * Math.PI;
+              const otherX = radius * Math.cos(otherAngle + rotation);
+              const otherY = radius * Math.sin(otherAngle + rotation);
+              const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+                sphere.position,
+                new THREE.Vector3(otherX, otherY, Math.sin(j) * 10)
+              ]);
+              const lineMaterial = new THREE.LineBasicMaterial({ color: 0x00ffff, opacity: 0.5, transparent: true });
+              const line = new THREE.Line(lineGeometry, lineMaterial);
+              scene.add(line);
+            }
+          }
+        });
+      });
+      rotation += 0.01;
+      renderer.render(scene, camera);
+    }
+    setInterval(drawConstructor, 16);
+
+    async function verifySignature(data, signature) {
+      const encoder = new TextEncoder();
+      const computed = btoa(String.fromCharCode(...encoder.encode(data))).slice(0, 32);
+      return computed === signature;
+    }
+
+    async function signData(data) {
+      const encoder = new TextEncoder();
+      const hash = btoa(String.fromCharCode(...encoder.encode(data)));
+      return hash.slice(0, 32);
+    }
+
+    async function addNode() {
+      try {
+        const name = document.getElementById("node-name").value.trim() || `Вузол ${nodes.length + 1}`;
+        const resonance = parseInt(document.getElementById("resonance-strength").value) || 60;
+        const connectionStrength = parseFloat(document.getElementById("connection-strength").value) || 0.5;
+        const glyphSource = document.getElementById("glyph-source").value;
+        let glyph = [];
+
+        if (glyphSource === "manual") {
+          const glyphInput = document.getElementById("glyph-input").value.trim();
+          if (!glyphInput) {
+            alert("Введи гліф для ручного режиму!");
+            return;
+          }
+          glyph = glyphInput.split("+").map(g => g.trim()).filter(g => g);
+          if (glyph.length < 1 || glyph.length > 7) {
+            alert("Гліф має містити від 1 до 7 елементів!");
+            return;
+          }
+        } else {
+          // Fetch existing glyphs
+          let existingGlyphs = [];
+          const sources = ["resoglyph", "resonanceCommunity", "resonanceChat", "resonanceMarket", "resonanceArchivator"];
+          for (const source of sources) {
+            const data = localStorage.getItem(source);
+            if (data) {
+              const parsed = JSON.parse(data);
+              if (Array.isArray(parsed)) {
+                parsed.forEach(item => {
+                  if (item.encrypted && item.signature && verifySignature(item.encrypted, item.signature)) {
+                    const eventData = JSON.parse(atob(item.encrypted));
+                    if (eventData.glyph) existingGlyphs.push(eventData.glyph);
+                  }
+                });
+              } else if (parsed.encrypted && parsed.signature && (await verifySignature(parsed.encrypted, parsed.signature))) {
+                const eventData = JSON.parse(atob(parsed.encrypted));
+                if (Array.isArray(eventData)) {
+                  eventData.forEach(entry => {
+                    if (entry.data.glyph) existingGlyphs.push(entry.data.glyph);
+                  });
+                } else if (eventData.glyph) {
+                  existingGlyphs.push(eventData.glyph);
+                }
+              }
+            }
+          }
+          if (existingGlyphs.length === 0) {
+            alert("Немає існуючих гліфів для вибору!");
+            return;
+          }
+          glyph = existingGlyphs[Math.floor(Math.random() * existingGlyphs.length)].slice(0, 7);
+        }
+
+        if (resonance < 0 || resonance > 100) {
+          alert("Сила резонансу має бути від 0 до 100!");
+          return;
+        }
+        if (connectionStrength < 0 || connectionStrength > 1) {
+          alert("Сила зв’язку має бути від 0 до 1!");
+          return;
+        }
+
+        nodes.push({
+          name,
+          glyph,
+          resonance,
+          connectionStrength,
+          timestamp: new Date().toISOString()
+        });
+
+        displayNodes();
+      } catch (e) {
+        alert("Помилка додавання вузла: " + e.message);
+      }
+    }
+
+    async function buildNetwork() {
+      if (nodes.length === 0) {
+        alert("Додай хоча б один вузол для побудови мережі!");
+        return;
+      }
+      try {
+        networkBuilt = true;
+        const networkData = {
+          nodes,
+          timestamp: new Date().toISOString()
+        };
+
+        const kyber = new Kyber.Kyber512();
+        const { publicKey, secretKey } = await kyber.keygen();
+        const encrypted = await kyber.encrypt(publicKey, JSON.stringify(networkData));
+        const encryptedStr = btoa(String.fromCharCode(...encrypted));
+        const signature = await signData(encryptedStr);
+        const finalNetwork = { encrypted: encryptedStr, signature, publicKey: btoa(String.fromCharCode(...publicKey)) };
+        localStorage.setItem("resonanceConstructor", JSON.stringify(finalNetwork));
+
+        displayNodes();
+        document.getElementById("constructor-data").textContent = JSON.stringify(finalNetwork, null, 2);
+        document.getElementById("constructor-data").style.display = "block";
+        document.getElementById("saveConstructor").style.display = "inline-block";
+        document.getElementById("savePng").style.display = "inline-block";
+      } catch (e) {
+        alert("Помилка побудови мережі: " + e.message);
+      }
+    }
+
+    function clearNetwork() {
+      nodes = [];
+      networkBuilt = false;
+      document.getElementById("constructor").innerHTML = "🛠️ Мережа очищена!";
+      document.getElementById("constructor-data").style.display = "none";
+      document.getElementById("saveConstructor").style.display = "none";
+      document.getElementById("savePng").style.display = "none";
+      scene.children.forEach(child => scene.remove(child));
+      renderer.render(scene, camera);
+    }
+
+    function displayNodes() {
+      let output = `🛠️ Вузлів у мережі: ${nodes.length}<br>`;
+      nodes.forEach((node, i) => {
+        output += `<div class="node">`;
+        output += `📍 Вузол ${i + 1}: ${node.name}<br>`;
+        output += `🧬 Гліф: ${node.glyph.join(" + ")}<br>`;
+        output += `🔗 Резонанс: ${node.resonance}%<br>`;
+        output += `🔗 Сила зв’язку: ${node.connectionStrength}<br>`;
+        output += `🕒 ${node.timestamp}<br>`;
+        output += `</div>`;
+      });
+      document.getElementById("constructor").innerHTML = output;
+    }
+
+    function saveConstructor() {
+      if (!blobCache) {
+        blobCache = new Blob([JSON.stringify(nodes, null, 2)], {type: "application/json"});
+      }
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blobCache);
+      a.download = "resonance-constructor.json";
+      a.click();
+    }
+
+    function savePng() {
+      const a = document.createElement("a");
+      a.href = constructorCanvas.toDataURL("image/png");
+      a.download = "resonance-constructor.png";
+      a.click();
+    }
+
+    let blobCache = null;
+  </script>
+</body>
+</html>
