@@ -90,6 +90,7 @@
 
   <input type="file" accept=".json" onchange="loadPassport(event)">
   <button onclick="registerGlyph()">🧬 Зареєструвати гліф</button>
+  <button onclick="checkResonance()">🔗 Перевірити резонанс</button>
   <canvas id="network-viz" width="400" height="400"></canvas>
   <div id="network"></div>
   <pre id="network-data" style="display:none;"></pre>
@@ -127,12 +128,13 @@
     const networkCanvas = document.getElementById("network-viz");
     const nCtx = networkCanvas.getContext("2d");
     let nodes = JSON.parse(localStorage.getItem("resonanceNetwork")) || [];
+    let resonancePercent = 0;
     function drawNetwork() {
       nCtx.clearRect(0, 0, networkCanvas.width, networkCanvas.height);
       nodes.forEach((node, i) => {
         const angle = (i / nodes.length) * 2 * Math.PI;
-        const x = 200 + Math.cos(angle) * 100;
-        const y = 200 + Math.sin(angle) * 100;
+        const x = 200 + Math.cos(angle) * (100 + resonancePercent * 10);
+        const y = 200 + Math.sin(angle) * (100 + resonancePercent * 10);
         const gradient = nCtx.createRadialGradient(x, y, 0, x, y, 10);
         gradient.addColorStop(0, "#0ff");
         gradient.addColorStop(1, "#f0f");
@@ -140,16 +142,22 @@
         nCtx.beginPath();
         nCtx.arc(x, y, 10, 0, 2 * Math.PI);
         nCtx.fill();
-        if (i > 0) {
-          const prevAngle = ((i - 1) / nodes.length) * 2 * Math.PI;
-          const prevX = 200 + Math.cos(prevAngle) * 100;
-          const prevY = 200 + Math.sin(prevAngle) * 100;
-          nCtx.strokeStyle = "#0ff";
-          nCtx.beginPath();
-          nCtx.moveTo(prevX, prevY);
-          nCtx.lineTo(x, y);
-          nCtx.stroke();
-        }
+        nodes.forEach((otherNode, j) => {
+          if (i < j) {
+            const otherAngle = (j / nodes.length) * 2 * Math.PI;
+            const otherX = 200 + Math.cos(otherAngle) * (100 + resonancePercent * 10);
+            const otherY = 200 + Math.sin(otherAngle) * (100 + resonancePercent * 10);
+            const match = node.glyph.filter(x => otherNode.glyph.includes(x)).length;
+            const percent = Math.round((match / node.glyph.length) * 100);
+            if (percent >= 60) {
+              nCtx.strokeStyle = `rgba(0, 255, 255, ${percent / 100})`;
+              nCtx.beginPath();
+              nCtx.moveTo(x, y);
+              nCtx.lineTo(otherX, otherY);
+              nCtx.stroke();
+            }
+          }
+        });
       });
     }
     setInterval(drawNetwork, 50);
@@ -173,6 +181,7 @@
             throw new Error("Підпис невалідний.");
           }
           passport = data;
+          document.getElementById("network").innerHTML = "📜 Паспорт завантажено!";
         } catch (e) {
           alert("Помилка при завантаженні паспорта: " + e.message);
         }
@@ -186,12 +195,18 @@
         return;
       }
       try {
+        const kyber = new Kyber.Kyber512();
+        const { publicKey, secretKey } = await kyber.keygen();
         const glyph = passport.glyph || (passport.encrypted ? JSON.parse(atob(passport.encrypted)).glyph : []);
         if (!glyph.length) {
           throw new Error("Гліф порожній або некоректний.");
         }
         const id = btoa(glyph.join('-')).slice(0, 24);
-        nodes.push({ id, glyph });
+        const nodeData = { id, glyph };
+        const encrypted = await kyber.encrypt(publicKey, JSON.stringify(nodeData));
+        const encryptedStr = btoa(String.fromCharCode(...encrypted));
+        const signature = await verifySignature(encryptedStr, passport.signature) ? passport.signature : await signData(encryptedStr);
+        nodes.push({ id, glyph, encrypted: encryptedStr, signature, publicKey: btoa(String.fromCharCode(...publicKey)) });
         localStorage.setItem("resonanceNetwork", JSON.stringify(nodes));
         document.getElementById("network").innerHTML = `✅ Гліф зареєстровано!<br>Вузлів у мережі: ${nodes.length}`;
         document.getElementById("network-data").textContent = JSON.stringify(nodes, null, 2);
@@ -200,6 +215,38 @@
       } catch (e) {
         alert("Помилка реєстрації гліфа: " + e.message);
       }
+    }
+
+    async function checkResonance() {
+      if (!passport || nodes.length < 2) {
+        alert("Завантаж паспорт і зареєструй гліф, щоб перевірити резонанс!");
+        return;
+      }
+      try {
+        const glyph = passport.glyph || (passport.encrypted ? JSON.parse(atob(passport.encrypted)).glyph : []);
+        if (!glyph.length) {
+          throw new Error("Гліф порожній або некоректний.");
+        }
+        let totalMatch = 0;
+        let comparisons = 0;
+        nodes.forEach(node => {
+          if (node.id !== btoa(glyph.join('-')).slice(0, 24)) {
+            const match = glyph.filter(x => node.glyph.includes(x)).length;
+            totalMatch += Math.round((match / glyph.length) * 100);
+            comparisons++;
+          }
+        });
+        resonancePercent = comparisons > 0 ? totalMatch / comparisons : 0;
+        document.getElementById("network").innerHTML = `🔗 Твій резонанс із мережею: ${resonancePercent.toFixed(1)}%`;
+      } catch (e) {
+        alert("Помилка перевірки резонансу: " + e.message);
+      }
+    }
+
+    async function signData(data) {
+      const encoder = new TextEncoder();
+      const hash = btoa(String.fromCharCode(...encoder.encode(data)));
+      return hash.slice(0, 32);
     }
 
     function saveNetwork() {
