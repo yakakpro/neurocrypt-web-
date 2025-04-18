@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>🌀 Resonance Hub</title>
+  <style>
+    body {
+      background: #0d0d0d;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 50px 30px;
+      max-width: 800px;
+      margin: auto;
+      text-align: center;
+    }
+    h1 { font-size: 2em; margin-bottom: 30px; }
+    button {
+      background: #1a1a1a;
+      color: #eee;
+      padding: 15px 25px;
+      border: 1px solid #444;
+      margin: 15px;
+      cursor: pointer;
+      font-size: 1em;
+      width: 80%;
+    }
+    button:hover {
+      background: #333;
+    }
+    .desc {
+      font-size: 0.95em;
+      margin-bottom: 20px;
+      color: #aaa;
+    }
+    footer {
+      margin-top: 60px;
+      font-size: 0.8em;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <h1>🌀 Resonance Hub</h1>
+  <p class="desc">Це точка збору. Відкрий резонанс, створи паспорт, перевір себе.</p>
+
+  <button onclick="openTool('resonance-gate.html')">
+    🧠 Пройти капчу<br>
+    <span class="desc">Випадкові питання, що відкривають твою присутність</span>
+  </button>
+
+  <button onclick="openTool('resonance-passport.html')">
+    🪪 Створити паспорт<br>
+    <span class="desc">Перетвори свій гліф у паспорт із ID та візуальним кодом</span>
+  </button>
+
+  <button onclick="openTool('resonance-verify.html')">
+    🔁 Перевірити тотожність<br>
+    <span class="desc">Зʼясуй, чи все ще ти є собою</span>
+  </button>
+
+  <footer>created with 💠 by Ти & Резонанс</footer>
+
+  <script>
+    function openTool(file) {
+      window.open(file, "_blank");
+    }
+  </script>
+</body>
+</html>
