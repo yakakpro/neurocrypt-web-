@@ -91,14 +91,14 @@
       const canvas = document.getElementById("viz");
       const ctx = canvas.getContext("2d");
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const size = Math.max(5, Math.ceil(glyph.length / 2)); // Dynamic size
+      const size = Math.max(5, Math.ceil(glyph.length / 2));
       const cell = canvas.width / size;
       for (let i = 0; i < size * size; i++) {
         const char = id[i % id.length].charCodeAt(0);
-        const r = (char * 3) % 255;
-        const g = (char * 5) % 255;
-        const b = (char * 7) % 255;
-        ctx.fillStyle = `rgb(${r},${g},${b})`;
+        const gradient = ctx.createLinearGradient(0, 0, cell, cell);
+        gradient.addColorStop(0, `rgb(${(char * 3) % 255}, 0, 255)`);
+        gradient.addColorStop(1, `rgb(0, ${(char * 5) % 255}, 255)`);
+        ctx.fillStyle = gradient;
         ctx.fillRect((i % size) * cell, Math.floor(i / size) * cell, cell, cell);
       }
     }
@@ -112,7 +112,6 @@
     }
 
     async function signData(data) {
-      // Simulated Dilithium signature (hash as placeholder)
       const encoder = new TextEncoder();
       const hash = btoa(String.fromCharCode(...encoder.encode(data)));
       return hash.slice(0, 32);
@@ -151,12 +150,13 @@
       generateQR(id);
     }
 
-    function loadGlyph(e) {
+    async function loadGlyph(e) {
       const reader = new FileReader();
       reader.onload = async function () {
         try {
           const data = JSON.parse(reader.result);
-          const glyph = data.glyph || [];
+          const glyph = data.glyph || (data.encrypted ? JSON.parse(atob(data.encrypted)).glyph : []);
+          if (!glyph.length) throw new Error("Гліф порожній або некоректний.");
           generatePassport(glyph);
         } catch (e) {
           alert("Помилка при завантаженні файлу: " + e.message);
@@ -167,8 +167,10 @@
 
     async function useLocalGlyph() {
       try {
-        const parsed = JSON.parse(localGlyphRaw); // Assuming unencrypted for compatibility
-        generatePassport(parsed.glyph);
+        const parsed = JSON.parse(localGlyphRaw);
+        const glyph = parsed.glyph || (parsed.encrypted ? JSON.parse(atob(parsed.encrypted)).glyph : []);
+        if (!glyph.length) throw new Error("Гліф порожній або некоректний.");
+        generatePassport(glyph);
       } catch (e) {
         alert("Помилка при читанні локального гліфа: " + e.message);
       }
