@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>🔁 Перевірка Тотожності</title>
+  <style>
+    body {
+      background: #0d0d0d;
+      color: #eee;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 30px;
+      max-width: 700px;
+      margin: auto;
+    }
+    h2, h3 { text-align: center; }
+    input, textarea, button {
+      width: 100%;
+      background: #1a1a1a;
+      color: #eee;
+      padding: 10px;
+      border: 1px solid #444;
+      margin: 10px 0;
+    }
+    button:hover { background: #333; }
+    #result {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 1.2em;
+    }
+    pre {
+      background: #111;
+      padding: 10px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <h2>🔁 Перевірка Резонансної Тотожності</h2>
+  <p style="text-align:center;">Завантаж паспорт та введи свій гліф — чи все ще ти це ти?</p>
+
+  <h3>1️⃣ Завантаж паспорт (.json):</h3>
+  <input type="file" accept=".json" onchange="loadPassport(event)" />
+
+  <h3>2️⃣ Введи гліф (через +):</h3>
+  <textarea id="userGlyph" rows="2" placeholder="приклад: вода+ніч+дзвін+🌑+мить"></textarea>
+
+  <button onclick="checkIdentity()">✅ Перевірити тотожність</button>
+
+  <div id="result"></div>
+  <pre id="passportRaw" style="display:none;"></pre>
+
+  <script>
+    let passport = null;
+
+    function loadPassport(e) {
+      const reader = new FileReader();
+      reader.onload = function () {
+        passport = JSON.parse(reader.result);
+        document.getElementById("passportRaw").textContent = JSON.stringify(passport, null, 2);
+        document.getElementById("passportRaw").style.display = "block";
+      };
+      reader.readAsText(e.target.files[0]);
+    }
+
+    function checkIdentity() {
+      if (!passport) {
+        alert("Спочатку завантаж паспорт!");
+        return;
+      }
+
+      const input = document.getElementById("userGlyph").value.trim();
+      const entered = input.split('+').map(x => x.trim());
+      const original = passport.glyph || [];
+
+      const matched = entered.filter(x => original.includes(x)).length;
+      const percent = Math.round((matched / original.length) * 100);
+      const result = document.getElementById("result");
+
+      if (percent >= 60) {
+        result.innerHTML = `✅ <b>Тотожність підтверджено.</b><br>Збіг: ${percent}%`;
+      } else {
+        result.innerHTML = `❌ <b>Несумісність.</b><br>Твій гліф змінився. Збіг: ${percent}%`;
+      }
+    }
+  </script>
+</body>
+</html>
