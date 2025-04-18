@@ -2,17 +2,31 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8">
-  <title>🔁 Перевірка Тотожності</title>
+  <title>🔁 Перевірка Резонансної Тотожності</title>
   <style>
     body {
-      background: #0d0d0d;
+      background: #0c0c0c;
       color: #eee;
-      font-family: 'Segoe UI', sans-serif;
+      font-family: 'Segoe UI', Arial, sans-serif;
       padding: 30px;
       max-width: 700px;
       margin: auto;
+      position: relative;
+      overflow: hidden;
     }
-    h2, h3 { text-align: center; }
+    #matrix {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.1;
+      z-index: -1;
+    }
+    h2, h3 {
+      text-align: center;
+      animation: glitch 3s infinite;
+    }
     input, textarea, button {
       width: 100%;
       background: #1a1a1a;
@@ -20,23 +34,45 @@
       padding: 10px;
       border: 1px solid #444;
       margin: 10px 0;
+      animation: glitch 5s infinite;
     }
     button:hover { background: #333; }
     #result {
       text-align: center;
       margin-top: 30px;
       font-size: 1.2em;
+      animation: glitch 5s infinite;
+    }
+    canvas {
+      display: block;
+      margin: 20px auto;
+      border: 1px solid #555;
+      background: #000;
+      animation: pulse 6s infinite;
     }
     pre {
       background: #111;
       padding: 10px;
       overflow-x: auto;
     }
+    @keyframes glitch {
+      0% { transform: translate(0); opacity: 1; }
+      2% { transform: translate(1px, 1px); opacity: 0.95; }
+      4% { transform: translate(-1px, -1px); opacity: 0.95; }
+      6% { transform: translate(0); opacity: 1; }
+      100% { transform: translate(0); opacity: 1; }
+    }
+    @keyframes pulse {
+      0% { filter: brightness(1); }
+      50% { filter: brightness(1.5); }
+      100% { filter: brightness(1); }
+    }
   </style>
 </head>
 <body>
+  <canvas id="matrix"></canvas>
   <h2>🔁 Перевірка Резонансної Тотожності</h2>
-  <p style="text-align:center;">Завантаж паспорт або продовж з памʼяті — і введи гліф для перевірки.</p>
+  <p style="text-align:center;">Завантаж паспорт або продовжи з памʼяті — і введи гліф для перевірки.</p>
 
   <h3>1️⃣ Завантаж паспорт:</h3>
   <input type="file" accept=".json" onchange="loadPassport(event)">
@@ -47,57 +83,169 @@
 
   <button onclick="checkIdentity()">✅ Перевірити тотожність</button>
 
+  <canvas id="viz" width="200" height="200" style="display:none;"></canvas>
   <div id="result"></div>
+  <button id="saveResult" onclick="saveResult()" style="display:none;">💾 Зберегти результат</button>
   <pre id="passportRaw" style="display:none;"></pre>
 
+  <script src="https://cdn.jsdelivr.net/npm/kyber-js@0.2.0/dist/kyber.min.js"></script>
   <script>
     let passport = null;
-    const local = localStorage.getItem("resonance-passport");
+    const local = localStorage.getItem("resoglyph"); // Змінено на resoglyph для сумісності
+    let blobCache = null;
 
     if (local) {
       document.getElementById("loadLocalBtn").style.display = "block";
     }
 
-    function useLocalPassport() {
-      try {
-        passport = JSON.parse(local);
-        document.getElementById("passportRaw").textContent = JSON.stringify(passport, null, 2);
-        document.getElementById("passportRaw").style.display = "block";
-      } catch (e) {
-        alert("Помилка при завантаженні паспорта з памʼяті.");
+    // Matrix rain
+    const matrixCanvas = document.getElementById("matrix");
+    const ctx = matrixCanvas.getContext("2d");
+    matrixCanvas.height = window.innerHeight;
+    matrixCanvas.width = window.innerWidth;
+    const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const fontSize = 10;
+    const columns = matrixCanvas.width / fontSize;
+    const drops = Array(Math.floor(columns)).fill(1);
+    function drawMatrix() {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+      ctx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
+      ctx.fillStyle = "#0ff";
+      ctx.font = `${fontSize}px monospace`;
+      drops.forEach((y, i) => {
+        const text = chars.charAt(Math.floor(Math.random() * chars.length));
+        const x = i * fontSize;
+        ctx.fillText(text, x, y * fontSize);
+        if (y * fontSize > matrixCanvas.height && Math.random() > 0.975) drops[i] = 0;
+        drops[i]++;
+      });
+    }
+    setInterval(drawMatrix, 50);
+
+    function hashGlyph(glyph) {
+      return btoa(glyph.join('-')).slice(0, 24);
+    }
+
+    function drawViz(glyph) {
+      const canvas = document.getElementById("viz");
+      canvas.style.display = "block";
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const size = Math.max(5, Math.ceil(glyph.length / 2));
+      const cell = canvas.width / size;
+      const id = hashGlyph(glyph);
+      for (let i = 0; i < size * size; i++) {
+        const char = id[i % id.length].charCodeAt(0);
+        const gradient = ctx.createLinearGradient(0, 0, cell, cell);
+        gradient.addColorStop(0, `#0ff`);
+        gradient.addColorStop(1, `#f0f`);
+        ctx.fillStyle = gradient;
+        ctx.fillRect((i % size) * cell, Math.floor(i / size) * cell, cell, cell);
       }
     }
 
-    function loadPassport(e) {
-      const reader = new FileReader();
-      reader.onload = function () {
-        passport = JSON.parse(reader.result);
-        localStorage.setItem("resonance-passport", reader.result);
+    async function verifySignature(data, signature) {
+      const encoder = new TextEncoder();
+      const computed = btoa(String.fromCharCode(...encoder.encode(data))).slice(0, 32);
+      return computed === signature;
+    }
+
+    async function useLocalPassport() {
+      try {
+        passport = JSON.parse(local);
+        if (!passport.encrypted || !passport.signature) {
+          throw new Error("Некоректний паспорт.");
+        }
+        const isValid = await verifySignature(passport.encrypted, passport.signature);
+        if (!isValid) {
+          throw new Error("Підпис невалідний.");
+        }
         document.getElementById("passportRaw").textContent = JSON.stringify(passport, null, 2);
         document.getElementById("passportRaw").style.display = "block";
+      } catch (e) {
+        alert("Помилка при завантаженні паспорта з памʼяті: " + e.message);
+      }
+    }
+
+    async function loadPassport(e) {
+      const reader = new FileReader();
+      reader.onload = async function () {
+        try {
+          passport = JSON.parse(reader.result);
+          if (!passport.encrypted || !passport.signature) {
+            throw new Error("Некоректний паспорт.");
+          }
+          const isValid = await verifySignature(passport.encrypted, passport.signature);
+          if (!isValid) {
+            throw new Error("Підпис невалідний.");
+          }
+          localStorage.setItem("resoglyph", reader.result);
+          document.getElementById("passportRaw").textContent = JSON.stringify(passport, null, 2);
+          document.getElementById("passportRaw").style.display = "block";
+        } catch (e) {
+          alert("Помилка при завантаженні паспорта: " + e.message);
+        }
       };
       reader.readAsText(e.target.files[0]);
     }
 
-    function checkIdentity() {
+    async function checkIdentity() {
       if (!passport) {
         alert("Спочатку завантаж паспорт!");
         return;
       }
 
-      const input = document.getElementById("userGlyph").value.trim();
-      const entered = input.split('+').map(x => x.trim());
-      const original = passport.glyph || [];
+      try {
+        const input = document.getElementById("userGlyph").value.trim();
+        if (!input) {
+          alert("Введи гліф!");
+          return;
+        }
+        const entered = input.split('+').map(x => x.trim());
+        if (entered.length < 7) {
+          alert("Гліф неповний, потрібно щонайменше 7 елементів.");
+          return;
+        }
 
-      const matched = entered.filter(x => original.includes(x)).length;
-      const percent = Math.round((matched / original.length) * 100);
-      const result = document.getElementById("result");
+        const original = passport.glyph || (passport.encrypted ? JSON.parse(atob(passport.encrypted)).glyph : []);
+        if (!original.length) {
+          alert("Гліф у паспорті некоректний.");
+          return;
+        }
 
-      if (percent >= 60) {
-        result.innerHTML = `✅ <b>Тотожність підтверджено.</b><br>Збіг: ${percent}%`;
-      } else {
-        result.innerHTML = `❌ <b>Несумісність.</b><br>Твій гліф змінився. Збіг: ${percent}%`;
+        const matched = entered.filter(x => original.includes(x)).length;
+        const percent = Math.round((matched / original.length) * 100);
+        const result = document.getElementById("result");
+
+        drawViz(entered);
+        if (percent >= 60) {
+          result.innerHTML = `✅ <b>Тотожність підтверджено.</b><br>Збіг: ${percent}%`;
+        } else {
+          result.innerHTML = `❌ <b>Несумісність.</b><br>Твій гліф змінився. Збіг: ${percent}%`;
+        }
+
+        const resultData = {
+          enteredGlyph: entered,
+          originalGlyph: original,
+          matchPercent: percent,
+          timestamp: new Date().toISOString()
+        };
+        localStorage.setItem("identityCheckResult", JSON.stringify(resultData));
+        document.getElementById("saveResult").style.display = "block";
+      } catch (e) {
+        alert("Помилка перевірки: " + e.message);
       }
+    }
+
+    function saveResult() {
+      if (!blobCache) {
+        const resultData = localStorage.getItem("identityCheckResult");
+        blobCache = new Blob([resultData], {type: "application/json"});
+      }
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blobCache);
+      a.download = "resonance-identity-check.json";
+      a.click();
     }
   </script>
 </body>
