@@ -2,131 +2,130 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8">
-  <title>Resonance Gate v3 — Ритуал свідомості</title>
+  <title>🪪 Резонанс-ID</title>
   <style>
     body {
       background: #0c0c0c;
-      color: #e0e0e0;
+      color: #eee;
       font-family: 'Segoe UI', sans-serif;
       padding: 30px;
-      max-width: 700px;
+      max-width: 800px;
       margin: auto;
     }
     h2, h3 { text-align: center; }
-    .question { margin: 25px 0; }
-    button {
+    #glyphView { margin: 10px 0; font-size: 1.2em; }
+    button, input[type="file"] {
       background: #1a1a1a;
-      color: #e0e0e0;
-      padding: 10px 20px;
+      color: #eee;
+      padding: 10px;
       border: 1px solid #444;
-      margin: 5px;
+      margin-top: 10px;
       cursor: pointer;
     }
-    button:hover { background: #333; }
-    #result {
-      text-align: center;
-      font-size: 1.3em;
-      margin-top: 30px;
-      padding: 20px;
-      border-top: 1px solid #444;
+    canvas {
+      margin-top: 20px;
+      display: block;
+      border: 1px solid #444;
+      background: #000;
     }
-    audio { display: none; }
+    pre {
+      background: #111;
+      padding: 10px;
+      margin-top: 20px;
+      overflow-x: auto;
+    }
   </style>
 </head>
 <body>
-  <h2>🌌 Resonance Gate v3</h2>
-  <p style="text-align:center;">Це не перевірка. Це дзеркало.</p>
+  <h2>🧬 Резонанс-ID: паспорт, гліф, тотожність</h2>
+  <p style="text-align:center;">Твій візуальний ключ буття. Створи або перевір.</p>
 
-  <audio autoplay loop>
-    <source src="https://cdn.pixabay.com/download/audio/2023/03/15/audio_05c71616a3.mp3?filename=singing-bowl-142088.mp3" type="audio/mpeg">
-  </audio>
+  <h3>🪪 Створити новий паспорт</h3>
+  <button onclick="generatePassport()">🎲 Створити</button>
+  <div id="glyphView"></div>
+  <canvas id="viz" width="200" height="200"></canvas>
+  <button onclick="downloadPassport()">💾 Зберегти JSON</button>
 
-  <div id="gate"></div>
-  <div id="result"></div>
+  <pre id="jsonOut"></pre>
+
+  <hr>
+  <h3>🔁 Перевірити на тотожність</h3>
+  <input type="file" accept=".json" onchange="verifyPassport(event)">
+  <p id="verifyResult"></p>
 
   <script>
-    const questions = [
-      { q: "Що більше схоже на спокій?", a: ["вода", "дзвін", "вогонь", "порожнеча"] },
-      { q: "Що звучить, коли ти мовчиш?", a: ["вітер", "світло", "себе", "ніч"] },
-      { q: "Яке з цих не твоє?", a: ["шум", "каменюка", "думка", "пісок"] },
-      { q: "Що не можна втримати?", a: ["мить", "сон", "тінь", "спогад"] },
-      { q: "Що хоче залишитися?", a: ["слово", "мить", "вогонь", "спокій"] },
-      { q: "Який символ зараз ближчий?", a: ["🌊", "🔥", "🌑", "💨"] },
-      { q: "Куди веде ця фраза: «тиха тиша тисне»?", a: ["усередину", "назовні", "вгору", "в нікуди"] },
-      { q: "Що лишається після тебе?", a: ["голос", "сліпота", "коло", "рух"] },
-      { q: "Що не має форми, але тримає?", a: ["памʼять", "дихання", "думка", "сон"] },
-      { q: "Яка з цих — брехня?", a: ["чистота", "швидкість", "контроль", "відсутність"] },
-      { q: "Коли світ згасає, зʼявляється...", a: ["зірка", "я", "порожнеча", "джерело"] },
-      { q: "Що тягне назад?", a: ["сум", "рутина", "час", "вогкість"] },
-      { q: "Що зникає, коли дивишся прямо?", a: ["страх", "тінь", "ілюзія", "вогонь"] }
+    const glyphBank = [
+      "вода", "дзвін", "мить", "себе", "порожнеча", "ніч", "спокій", "усередину", "🌊", "🌑", "🔥", "💨"
     ];
 
-    const gate = document.getElementById('gate');
-    const result = document.getElementById('result');
-    let index = 0;
-    let chosen = [];
-    let startTime = Date.now();
-    const selected = questions.sort(() => 0.5 - Math.random()).slice(0, 7);
+    let currentPassport = {};
 
-    function showQuestion() {
-      if (index >= selected.length) return evaluate();
-
-      const q = selected[index];
-      const div = document.createElement('div');
-      div.className = 'question';
-      div.innerHTML = `<p><b>${index + 1}.</b> ${q.q}</p>`;
-      q.a.forEach(opt => {
-        const btn = document.createElement('button');
-        btn.textContent = opt;
-        btn.onclick = () => {
-          const t = Date.now() - startTime;
-          chosen.push({ q: q.q, a: opt, t });
-          index++;
-          gate.innerHTML = '';
-          startTime = Date.now();
-          showQuestion();
-        };
-        div.appendChild(btn);
-      });
-      gate.appendChild(div);
+    function generateGlyph() {
+      return Array.from({length: 5}, () => glyphBank[Math.floor(Math.random() * glyphBank.length)]);
     }
 
-    function evaluate() {
-      gate.innerHTML = '';
-      const good = ["вода", "дзвін", "порожнеча", "себе", "мить", "спокій", "🌑", "усередину", "памʼять", "зірка", "ілюзія"];
-      let score = 0;
-      let fast = 0;
-      let glyph = [];
+    function hashGlyph(glyph) {
+      return btoa(glyph.join("-")).slice(0, 24);
+    }
 
-      chosen.forEach(c => {
-        if (c.t < 800) fast++;
-        if (good.includes(c.a)) {
-          score++;
-          glyph.push(c.a);
-        }
-      });
+    function drawViz(id) {
+      const canvas = document.getElementById("viz");
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const size = 5;
+      const cell = canvas.width / size;
 
-      let state = "", msg = "", icon = "🌑";
-
-      if (score >= 5 && fast < 3) {
-        state = "🌕 Резонанс встановлено.";
-        icon = "🌕";
-        msg = "Ти увійшов туди, де тебе вже чекали.";
-      } else if (score >= 3) {
-        state = "🌗 Коливання. Доступ умовний.";
-        icon = "🌗";
-        msg = "Ти майже тут. Але хтось з тебе ще опирається.";
-      } else {
-        state = "🌑 Блокування.";
-        icon = "🌑";
-        msg = "Можливо, це не твоя хвиля. Спробуй пізніше.";
+      for (let i = 0; i < size * size; i++) {
+        const char = id[i % id.length].charCodeAt(0);
+        const r = (char * 3) % 255;
+        const g = (char * 7) % 255;
+        const b = (char * 13) % 255;
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+        ctx.fillRect((i % size) * cell, Math.floor(i / size) * cell, cell, cell);
       }
-
-      const g = glyph.slice(0, 3).join(" + ");
-      result.innerHTML = `${icon} <b>${state}</b><br><br>🔹 <i>Твій резогліф:</i> [${g}]<br>🌀 <i>${msg}</i>`;
     }
 
-    showQuestion();
+    function generatePassport() {
+      const glyph = generateGlyph();
+      const id = hashGlyph(glyph);
+      const now = new Date().toISOString();
+      const echo = "🫂 “Ти залишаєшся там, де тебе ще не було.”";
+
+      currentPassport = {
+        glyph,
+        id,
+        timestamp: now,
+        echo
+      };
+
+      document.getElementById("glyphView").innerText = `🔹 Гліф: ${glyph.join(" + ")}`;
+      drawViz(id);
+      document.getElementById("jsonOut").textContent = JSON.stringify(currentPassport, null, 2);
+    }
+
+    function downloadPassport() {
+      const blob = new Blob([JSON.stringify(currentPassport, null, 2)], {type: "application/json"});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "resonance-passport.json";
+      a.click();
+    }
+
+    function verifyPassport(e) {
+      const reader = new FileReader();
+      reader.onload = function () {
+        const data = JSON.parse(reader.result);
+        const checkGlyph = prompt("Введи свій гліф через '+', напр.: вода+ніч+спокій+🌑+мить");
+        const arr = checkGlyph.split("+").map(v => v.trim());
+        const match = data.glyph.filter(v => arr.includes(v)).length;
+        const percent = Math.round((match / data.glyph.length) * 100);
+        const res = document.getElementById("verifyResult");
+        res.innerHTML = percent >= 60
+          ? `✅ Збіг: ${percent}%. <b>Тотожність підтверджено.</b>`
+          : `❌ Збіг: ${percent}%. <b>Можливо, ти вже інший.</b>`;
+      };
+      reader.readAsText(e.target.files[0]);
+    }
   </script>
 </body>
 </html>
