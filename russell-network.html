@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>🔁 Russell Resonance Network</title>
+  <style>
+    body {
+      background: #0e0e0e;
+      color: #eee;
+      font-family: 'Segoe UI', sans-serif;
+      text-align: center;
+      padding: 30px;
+    }
+    canvas {
+      background: #111;
+      border: 1px solid #333;
+      margin-top: 20px;
+    }
+    h2 { margin-bottom: 5px; }
+    .note { color: #888; font-size: 0.9em; }
+  </style>
+</head>
+<body>
+  <h2>🔁 Russell Resonance Network</h2>
+  <p class="note">Парадокс Рассела як стабільна мережа — не ∈, а ↺</p>
+  <canvas id="network" width="800" height="600"></canvas>
+
+  <script>
+    const canvas = document.getElementById("network");
+    const ctx = canvas.getContext("2d");
+
+    const nodes = [
+      { id: "R", x: 400, y: 300, color: "#ff4444", size: 35, label: "R (самореференція)" },
+      { id: "A", x: 250, y: 200, color: "#44ccff", size: 25, label: "A (вплив)" },
+      { id: "B", x: 550, y: 200, color: "#44ccff", size: 25, label: "B (відбиття)" },
+      { id: "C", x: 400, y: 450, color: "#44ccff", size: 25, label: "C (вузол решти множин)" }
+    ];
+
+    const edges = [
+      ["R", "R"], // самозв'язок
+      ["R", "A"],
+      ["A", "B"],
+      ["B", "R"],
+      ["C", "R"],
+      ["R", "C"]
+    ];
+
+    function drawNode(node, pulse = false) {
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, node.size + (pulse ? 3 : 0), 0, 2 * Math.PI);
+      ctx.fillStyle = node.color;
+      ctx.fill();
+      ctx.strokeStyle = "#333";
+      ctx.stroke();
+      ctx.fillStyle = "#000";
+      ctx.font = "bold 13px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(node.id, node.x, node.y + 4);
+
+      // label
+      ctx.fillStyle = "#999";
+      ctx.font = "12px sans-serif";
+      ctx.fillText(node.label, node.x, node.y + node.size + 20);
+    }
+
+    function drawEdge(from, to) {
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.lineTo(to.x, to.y);
+      ctx.strokeStyle = "#777";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // → стрілка
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
+      const angle = Math.atan2(dy, dx);
+      const arrowX = to.x - 15 * Math.cos(angle);
+      const arrowY = to.y - 15 * Math.sin(angle);
+
+      ctx.beginPath();
+      ctx.moveTo(arrowX, arrowY);
+      ctx.lineTo(arrowX - 5 * Math.cos(angle - 0.4), arrowY - 5 * Math.sin(angle - 0.4));
+      ctx.lineTo(arrowX - 5 * Math.cos(angle + 0.4), arrowY - 5 * Math.sin(angle + 0.4));
+      ctx.closePath();
+      ctx.fillStyle = "#999";
+      ctx.fill();
+    }
+
+    let t = 0;
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      edges.forEach(([fromId, toId]) => {
+        const from = nodes.find(n => n.id === fromId);
+        const to = nodes.find(n => n.id === toId);
+        drawEdge(from, to);
+      });
+
+      nodes.forEach(node => {
+        const pulse = node.id === "R" && Math.sin(t / 10) > 0;
+        drawNode(node, pulse);
+      });
+
+      t++;
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
