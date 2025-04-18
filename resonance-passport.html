@@ -7,7 +7,7 @@
     body {
       background: #0c0c0c;
       color: #eee;
-      font-family: 'Segoe UI', sans-serif;
+      font-family: 'Segoe UI', Arial, sans-serif;
       padding: 30px;
       max-width: 800px;
       margin: auto;
@@ -22,11 +22,25 @@
       display: block;
       cursor: pointer;
     }
+    button:hover, input[type="file"]:hover { background: #333; }
     canvas {
       display: block;
       margin: 20px auto;
       border: 1px solid #555;
       background: #000;
+      animation: glitch 4s infinite;
+    }
+    #qr-code {
+      display: block;
+      margin: 20px auto;
+      animation: glitch 5s infinite;
+    }
+    @keyframes glitch {
+      0% { transform: translate(0); opacity: 1; }
+      2% { transform: translate(1px, 1px); opacity: 0.95; }
+      4% { transform: translate(-1px, -1px); opacity: 0.95; }
+      6% { transform: translate(0); opacity: 1; }
+      100% { transform: translate(0); opacity: 1; }
     }
     pre {
       background: #111;
@@ -44,10 +58,15 @@
   <input type="file" accept=".json" onchange="loadGlyph(event)">
   <button id="loadLocalBtn" onclick="useLocalGlyph()" style="display:none;">🧬 Продовжити з резогліфом</button>
   <canvas id="viz" width="200" height="200"></canvas>
+  <canvas id="qr-code" width="200" height="200" style="display:none;"></canvas>
   <div id="info"></div>
   <button id="saveBtn" onclick="downloadPassport()" style="display:none;">💾 Зберегти Паспорт</button>
+  <button id="savePngBtn" onclick="downloadPng()" style="display:none;">🖼️ Зберегти Візуалізацію</button>
+  <button id="saveQrBtn" onclick="downloadQr()" style="display:none;">📷 Зберегти QR</button>
   <pre id="passportData"></pre>
 
+  <script src="https://cdn.jsdelivr.net/npm/kyber-js@0.2.0/dist/kyber.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
   <script>
     const echoPhrases = [
       "Твоя тиша памʼятає більше, ніж час.",
@@ -58,33 +77,21 @@
     ];
 
     const localGlyphRaw = localStorage.getItem("resoglyph");
+    let blobCache = null;
 
     if (localGlyphRaw) {
       document.getElementById("loadLocalBtn").style.display = "block";
-    }
-
-    function useLocalGlyph() {
-      try {
-        const parsed = JSON.parse(localGlyphRaw);
-        if (parsed && parsed.glyph) {
-          generatePassport(parsed.glyph);
-        } else {
-          alert("Недійсний гліф у памʼяті.");
-        }
-      } catch (e) {
-        alert("Помилка при читанні локального гліфа.");
-      }
     }
 
     function hashGlyph(glyph) {
       return btoa(glyph.join('-')).slice(0, 24);
     }
 
-    function drawViz(id) {
+    function drawViz(id, glyph) {
       const canvas = document.getElementById("viz");
       const ctx = canvas.getContext("2d");
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const size = 5;
+      const size = Math.max(5, Math.ceil(glyph.length / 2)); // Dynamic size
       const cell = canvas.width / size;
       for (let i = 0; i < size * size; i++) {
         const char = id[i % id.length].charCodeAt(0);
@@ -96,7 +103,26 @@
       }
     }
 
-    function generatePassport(glyph) {
+    function generateQR(id) {
+      const qrCanvas = document.getElementById("qr-code");
+      qrCanvas.style.display = "block";
+      QRCode.toCanvas(qrCanvas, `/validate.html?id=${id}`, { width: 200, color: { dark: '#0ff', light: '#000' } }, (err) => {
+        if (err) console.error(err);
+      });
+    }
+
+    async function signData(data) {
+      // Simulated Dilithium signature (hash as placeholder)
+      const encoder = new TextEncoder();
+      const hash = btoa(String.fromCharCode(...encoder.encode(data)));
+      return hash.slice(0, 32);
+    }
+
+    async function generatePassport(glyph) {
+      if (!glyph || glyph.length < 7) {
+        alert("Гліф некоректний або неповний.");
+        return;
+      }
       const id = hashGlyph(glyph);
       const echo = echoPhrases[Math.floor(Math.random() * echoPhrases.length)];
       const passport = {
@@ -105,32 +131,73 @@
         date: new Date().toISOString(),
         echo
       };
+      const kyber = new Kyber.Kyber512();
+      const { publicKey, secretKey } = await kyber.keygen();
+      const encrypted = await kyber.encrypt(publicKey, JSON.stringify(passport));
+      const encryptedStr = btoa(String.fromCharCode(...encrypted));
+      const signature = await signData(encryptedStr);
+      const finalPassport = { encrypted: encryptedStr, signature, publicKey: btoa(String.fromCharCode(...publicKey)) };
       document.getElementById("info").innerHTML = `
         <p>🧬 <b>Гліф:</b> ${glyph.join(' + ')}</p>
         <p>🧩 <b>ID:</b> ${id}</p>
         <p>🪞 <b>Відлуння:</b> <i>“${echo}”</i></p>
+        <p>🔒 <b>Підпис:</b> ${signature.slice(0, 8)}...</p>
       `;
-      document.getElementById("passportData").textContent = JSON.stringify(passport, null, 2);
+      document.getElementById("passportData").textContent = JSON.stringify(finalPassport, null, 2);
       document.getElementById("saveBtn").style.display = "block";
-      drawViz(id);
+      document.getElementById("savePngBtn").style.display = "block";
+      document.getElementById("saveQrBtn").style.display = "block";
+      drawViz(id, glyph);
+      generateQR(id);
     }
 
     function loadGlyph(e) {
       const reader = new FileReader();
-      reader.onload = function () {
-        const data = JSON.parse(reader.result);
-        const glyph = data.glyph || [];
-        generatePassport(glyph);
+      reader.onload = async function () {
+        try {
+          const data = JSON.parse(reader.result);
+          const glyph = data.glyph || [];
+          generatePassport(glyph);
+        } catch (e) {
+          alert("Помилка при завантаженні файлу: " + e.message);
+        }
       };
       reader.readAsText(e.target.files[0]);
     }
 
+    async function useLocalGlyph() {
+      try {
+        const parsed = JSON.parse(localGlyphRaw); // Assuming unencrypted for compatibility
+        generatePassport(parsed.glyph);
+      } catch (e) {
+        alert("Помилка при читанні локального гліфа: " + e.message);
+      }
+    }
+
     function downloadPassport() {
-      const data = document.getElementById("passportData").textContent;
-      const blob = new Blob([data], {type: "application/json"});
+      if (!blobCache) {
+        const data = document.getElementById("passportData").textContent;
+        blobCache = new Blob([data], {type: "application/json"});
+      }
       const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
+      a.href = URL.createObjectURL(blobCache);
       a.download = "resonance-passport.json";
+      a.click();
+    }
+
+    function downloadPng() {
+      const canvas = document.getElementById("viz");
+      const a = document.createElement("a");
+      a.href = canvas.toDataURL("image/png");
+      a.download = "resonance-passport.png";
+      a.click();
+    }
+
+    function downloadQr() {
+      const canvas = document.getElementById("qr-code");
+      const a = document.createElement("a");
+      a.href = canvas.toDataURL("image/png");
+      a.download = "resonance-passport-qr.png";
       a.click();
     }
   </script>
