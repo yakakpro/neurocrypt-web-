@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>⚡️ Резонансний Генератор</title>
+  <style>
+    body {
+      background: #0c0c0c;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      padding: 50px 30px;
+      max-width: 800px;
+      margin: auto;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    #matrix {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.1;
+      z-index: -1;
+    }
+    h1 {
+      font-size: 2em;
+      margin-bottom: 30px;
+      animation: glitch 3s infinite;
+    }
+    canvas {
+      display: block;
+      margin: 20px auto;
+      border: 1px solid #555;
+      background: #000;
+      animation: pulse 6s infinite;
+    }
+    button, input[type="number"], select {
+      background: #1a1a1a;
+      color: #eee;
+      padding: 15px;
+      border: 1px solid #444;
+      margin: 15px;
+      cursor: pointer;
+      font-size: 1em;
+      width: 80%;
+      animation: glitch 5s infinite;
+    }
+    button:hover, input:hover, select:hover {
+      background: #333;
+      transform: scale(1.05);
+    }
+    #generator {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 1.2em;
+      animation: glitch 5s infinite;
+    }
+    pre {
+      background: #111;
+      padding: 10px;
+      overflow-x: auto;
+      margin-top: 20px;
+    }
+    footer {
+      margin-top: 60px;
+      font-size: 0.8em;
+      color: #555;
+      animation: glitch 5s infinite;
+    }
+    .controls {
+      margin: 20px 0;
+    }
+    @keyframes glitch {
+      0% { transform: translate(0); opacity: 1; }
+      2% { transform: translate(1px, 1px); opacity: 0.95; }
+      4% { transform: translate(-1px, -1px); opacity: 0.95; }
+      6% { transform: translate(0); opacity: 1; }
+      100% { transform: translate(0); opacity: 1; }
+    }
+    @keyframes pulse {
+      0% { filter: brightness(1); }
+      50% { filter: brightness(1.5); }
+      100% { filter: brightness(1); }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="matrix"></canvas>
+  <h1>⚡️ Резонансний Генератор</h1>
+  <p>Створюй нові гліфи та мережі на основі ШІ-аналізу!</p>
+
+  <div class="controls">
+    <input type="number" id="glyph-count" placeholder="Кількість гліфів (1-20)" min="1" max="20">
+    <input type="number" id="creativity" placeholder="Креативність (0-1)" min="0" max="1" step="0.1">
+    <input type="number" id="resonance-base" placeholder="Базовий резонанс (0-100)" min="0" max="100">
+    <button onclick="startGeneration()">▶️ Запустити генерацію</button>
+    <button onclick="stopGeneration()">⏹️ Зупинити генерацію</button>
+  </div>
+  <canvas id="generator-viz" width="400" height="400"></canvas>
+  <div id="generator"></div>
+  <pre id="generator-data" style="display:none;"></pre>
+  <button id="saveGenerator" onclick="saveGenerator()" style="display:none;">💾 Зберегти генерацію</button>
+  <button id="savePng" onclick="savePng()" style="display:none;">🖼️ Зберегти як PNG</button>
+
+  <footer>created with 💠 by Ти & Резонанс</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/kyber-js@0.2.0/dist/kyber.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.min.js"></script>
+  <script>
+    // Matrix rain
+    const matrixCanvas = document.getElementById("matrix");
+    const ctx = matrixCanvas.getContext("2d");
+    matrixCanvas.height = window.innerHeight;
+    matrixCanvas.width = window.innerWidth;
+    const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ🌀";
+    const fontSize = 10;
+    const columns = matrixCanvas.width / fontSize;
+    const drops = Array(Math.floor(columns)).fill(1);
+    function drawMatrix() {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+      ctx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
+      ctx.fillStyle = "#0ff";
+      ctx.font = `${fontSize}px monospace`;
+      drops.forEach((y, i) => {
+        const text = chars.charAt(Math.floor(Math.random() * chars.length));
+        const x = i * fontSize;
+        ctx.fillText(text, x, y * fontSize);
+        if (y * fontSize > matrixCanvas.height && Math.random() > 0.975) drops[i] = 0;
+        drops[i]++;
+      });
+    }
+    setInterval(drawMatrix, 50);
+
+    // Generator visualization
+    const generatorCanvas = document.getElementById("generator-viz");
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, generatorCanvas.width / generatorCanvas.height, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ canvas: generatorCanvas });
+    renderer.setSize(generatorCanvas.width, generatorCanvas.height);
+    camera.position.z = 50;
+    let nodes = [];
+    let rotation = 0;
+    let generationRunning = false;
+
+    function drawGenerator() {
+      if (!generationRunning) return;
+      scene.children.forEach(child => scene.remove(child));
+      nodes.forEach((node, i) => {
+        const geometry = new THREE.SphereGeometry(1, 32, 32);
+        const material = new THREE.MeshBasicMaterial({
+          color: node.resonance >= 60 ? 0x00ffff : 0xff00ff,
+          transparent: true,
+          opacity: 0.8
+        });
+        const sphere = new THREE.Mesh(geometry, material);
+        const angle = (i / nodes.length) * 2 * Math.PI;
+        const radius = 20 + node.resonance / 5;
+        sphere.position.set(
+          radius * Math.cos(angle + rotation),
+          radius * Math.sin(angle + rotation),
+          Math.sin(i) * 10
+        );
+        scene.add(sphere);
+        nodes.forEach((otherNode, j) => {
+          if (i < j) {
+            const match = node.glyph.filter(x => otherNode.glyph.includes(x)).length;
+            const percent = Math.round((match / node.glyph.length) * 100);
+            if (percent >= 60) {
+              const otherAngle = (j / nodes.length) * 2 * Math.PI;
+              const otherX = radius * Math.cos(otherAngle + rotation);
+              const otherY = radius * Math.sin(otherAngle + rotation);
+              const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+                sphere.position,
+                new THREE.Vector3(otherX, otherY, Math.sin(j) * 10)
+              ]);
+              const lineMaterial = new THREE.LineBasicMaterial({ color: 0x00ffff, opacity: 0.5, transparent: true });
+              const line = new THREE.Line(lineGeometry, lineMaterial);
+              scene.add(line);
+            }
+          }
+        });
+      });
+      rotation += 0.01;
+      renderer.render(scene, camera);
+    }
+    setInterval(drawGenerator, 16);
+
+    async function verifySignature(data, signature) {
+      const encoder = new TextEncoder();
+      const computed = btoa(String.fromCharCode(...encoder.encode(data))).slice(0, 32);
+      return computed === signature;
+    }
+
+    async function signData(data) {
+      const encoder = new TextEncoder();
+      const hash = btoa(String.fromCharCode(...encoder.encode(data)));
+      return hash.slice(0, 32);
+    }
+
+    async function startGeneration() {
+      try {
+        const glyphCount = parseInt(document.getElementById("glyph-count").value) || 5;
+        const creativity = parseFloat(document.getElementById("creativity").value) || 0.5;
+        const resonanceBase = parseInt(document.getElementById("resonance-base").value) || 60;
+
+        if (glyphCount < 1 || glyphCount > 20) {
+          alert("Кількість гліфів має бути від 1 до 20!");
+          return;
+        }
+        if (creativity < 0 || creativity > 1) {
+          alert("Креативність має бути від 0 до 1!");
+          return;
+        }
+        if (resonanceBase < 0 || resonanceBase > 100) {
+          alert("Базовий резонанс має бути від 0 до 100!");
+          return;
+        }
+
+        // Collect existing glyphs from network
+        let existingGlyphs = [];
+        const sources = ["resoglyph", "resonanceCommunity", "resonanceChat", "resonanceMarket"];
+        for (const source of sources) {
+          const data = localStorage.getItem(source);
+          if (data) {
+            const parsed = JSON.parse(data);
+            if (Array.isArray(parsed)) {
+              parsed.forEach(item => {
+                if (item.encrypted && item.signature && verifySignature(item.encrypted, item.signature)) {
+                  const eventData = JSON.parse(atob(item.encrypted));
+                  if (eventData.glyph) existingGlyphs.push(eventData.glyph);
+                }
+              });
+            } else if (parsed.encrypted && parsed.signature && (await verifySignature(parsed.encrypted, parsed.signature))) {
+              const eventData = JSON.parse(atob(parsed.encrypted));
+              if (eventData.glyph) existingGlyphs.push(eventData.glyph);
+            }
+          }
+        }
+
+        // Generate new glyphs
+        nodes = [];
+        const glyphElements = [
+          "вода", "ніч", "дзвін", "🌑", "мить", "спокій", "усередину",
+          "світло", "темрява", "рух", "тиша", "серце", "✨", "вперед",
+          "порядок", "сенс", "свобода", "душа", "🌀", "вглиб", "⚡", "🌌"
+        ];
+
+        for (let i = 0; i < glyphCount; i++) {
+          let glyph = [];
+          if (existingGlyphs.length && Math.random() < creativity) {
+            const baseGlyph = existingGlyphs[Math.floor(Math.random() * existingGlyphs.length)];
+            glyph = baseGlyph.slice(0, 7);
+            for (let j = 0; j < glyph.length; j++) {
+              if (Math.random() < creativity) {
+                glyph[j] = glyphElements[Math.floor(Math.random() * glyphElements.length)];
+              }
+            }
+          } else {
+            for (let j = 0; j < 7; j++) {
+              glyph.push(glyphElements[Math.floor(Math.random() * glyphElements.length)]);
+            }
+          }
+          const resonance = resonanceBase + (Math.random() * creativity * 20 - 10);
+          nodes.push({
+            glyph,
+            resonance: Math.max(0, Math.min(100, resonance)),
+            timestamp: new Date().toISOString()
+          });
+        }
+
+        generationRunning = true;
+        const generationData = {
+          nodes,
+          glyphCount,
+          creativity,
+          resonanceBase,
+          timestamp: new Date().toISOString()
+        };
+
+        const kyber = new Kyber.Kyber512();
+        const { publicKey, secretKey } = await kyber.keygen();
+        const encrypted = await kyber.encrypt(publicKey, JSON.stringify(generationData));
+        const encryptedStr = btoa(String.fromCharCode(...encrypted));
+        const signature = await signData(encryptedStr);
+        const finalGeneration = { encrypted: encryptedStr, signature, publicKey: btoa(String.fromCharCode(...publicKey)) };
+        localStorage.setItem("resonanceGenerator", JSON.stringify(finalGeneration));
+
+        let output = `⚡️ Генерація запущена!<br>`;
+        output += `🧬 Гліфів: ${glyphCount}<br>`;
+        output += `🎨 Креативність: ${creativity}<br>`;
+        output += `🔗 Базовий резонанс: ${resonanceBase}%<br>`;
+        output += `📊 Середній резонанс: ${(nodes.reduce((sum, node) => sum + node.resonance, 0) / nodes.length).toFixed(1)}%<br>`;
+        output += `<br>Згенеровані гліфи:<br>`;
+        nodes.forEach((node, i) => {
+          output += `🧬 Гліф ${i + 1}: ${node.glyph.join(" + ")}<br>`;
+        });
+        document.getElementById("generator").innerHTML = output;
+        document.getElementById("generator-data").textContent = JSON.stringify(finalGeneration, null, 2);
+        document.getElementById("generator-data").style.display = "block";
+        document.getElementById("saveGenerator").style.display = "inline-block";
+        document.getElementById("savePng").style.display = "inline-block";
+      } catch (e) {
+        alert("Помилка запуску генерації: " + e.message);
+      }
+    }
+
+    function stopGeneration() {
+      generationRunning = false;
+      document.getElementById("generator").innerHTML += "<br>⏹️ Генерація зупинена!";
+    }
+
+    function saveGenerator() {
+      if (!blobCache) {
+        blobCache = new Blob([JSON.stringify(nodes, null, 2)], {type: "application/json"});
+      }
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blobCache);
+      a.download = "resonance-generator.json";
+      a.click();
+    }
+
+    function savePng() {
+      const a = document.createElement("a");
+      a.href = generatorCanvas.toDataURL("image/png");
+      a.download = "resonance-generator.png";
+      a.click();
+    }
+
+    let blobCache = null;
+  </script>
+</body>
+</html>
