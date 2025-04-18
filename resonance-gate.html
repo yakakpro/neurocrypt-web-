@@ -2,50 +2,50 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8">
-  <title>Resonance Gate</title>
+  <title>🪪 Резонанс-Паспорт</title>
   <style>
     body {
-      background: #0d0d0d;
-      color: #e0e0e0;
+      background: #0c0c0c;
+      color: #eee;
       font-family: 'Segoe UI', Arial, sans-serif;
       padding: 30px;
-      max-width: 700px;
+      max-width: 800px;
       margin: auto;
     }
     h2 { text-align: center; animation: glitch 3s infinite; }
-    .question { margin: 25px 0; }
-    button {
+    button, input[type="file"] {
       background: #1a1a1a;
-      color: #e0e0e0;
-      padding: 10px 20px;
+      color: #eee;
+      padding: 10px;
       border: 1px solid #444;
-      margin: 5px;
+      margin: 10px auto;
+      display: block;
       cursor: pointer;
-      position: relative;
-      transition: all 0.2s;
     }
-    button:hover { background: #333; }
-    button.glitch::after {
-      content: attr(data-text);
-      position: absolute;
-      left: 2px;
-      top: 2px;
-      color: #0ff;
-      opacity: 0.5;
-      animation: glitch 4s infinite;
+    button:hover, input[type="file"]:hover { background: #333; }
+    canvas {
+      display: block;
+      margin: 20px auto;
+      border: 1px solid #555;
+      background: #000;
+      animation: pulse 6s infinite;
     }
-    @keyframes glitch {
-      0% { transform: translate(0); opacity: 0.5; }
-      2% { transform: translate(1px, 1px); opacity: 0.3; }
-      4% { transform: translate(-1px, -1px); opacity: 0.5; }
-      6% { transform: translate(0); opacity: 0.3; }
-      100% { transform: translate(0); opacity: 0.5; }
-    }
-    #result { text-align: center; font-size: 1.2em; margin-top: 30px; }
-    #qr-passport, #qr-validate {
+    #qr-code {
       display: block;
       margin: 20px auto;
       animation: glitch 5s infinite;
+    }
+    @keyframes glitch {
+      0% { transform: translate(0); opacity: 1; }
+      2% { transform: translate(1px, 1px); opacity: 0.95; }
+      4% { transform: translate(-1px, -1px); opacity: 0.95; }
+      6% { transform: translate(0); opacity: 1; }
+      100% { transform: translate(0); opacity: 1; }
+    }
+    @keyframes pulse {
+      0% { filter: brightness(1); }
+      50% { filter: brightness(1.5); }
+      100% { filter: brightness(1); }
     }
     pre {
       background: #111;
@@ -53,53 +53,74 @@
       overflow-x: auto;
       margin-top: 20px;
     }
+    #info { text-align: center; margin-top: 20px; }
   </style>
 </head>
 <body>
-  <h2>🌌 Resonance Gate</h2>
-  <p style="text-align:center;">Це не перевірка. Це дзеркало.</p>
+  <h2>🪪 Створити Резонанс-Паспорт</h2>
+  <p style="text-align:center;">Завантаж файл або використай збережений гліф.</p>
 
-  <div id="gate"></div>
-  <div id="result"></div>
-  <canvas id="qr-passport" width="200" height="200" style="display:none;"></canvas>
-  <canvas id="qr-validate" width="200" height="200" style="display:none;"></canvas>
-  <pre id="export" style="display:none;"></pre>
-  <button id="download" style="display:none;" onclick="downloadJSON()">💾 Зберегти резогліф</button>
+  <input type="file" accept=".json" onchange="loadGlyph(event)">
+  <button id="loadLocalBtn" onclick="useLocalGlyph()" style="display:none;">🧬 Продовжити з резогліфом</button>
+  <canvas id="viz" width="200" height="200"></canvas>
+  <canvas id="qr-code" width="200" height="200" style="display:none;"></canvas>
+  <div id="info"></div>
+  <button id="saveBtn" onclick="downloadPassport()" style="display:none;">💾 Зберегти Паспорт</button>
+  <button id="savePngBtn" onclick="downloadPng()" style="display:none;">🖼️ Зберегти Візуалізацію</button>
+  <button id="saveQrBtn" onclick="downloadQr()" style="display:none;">📷 Зберегти QR</button>
+  <pre id="passportData"></pre>
 
   <script src="https://cdn.jsdelivr.net/npm/kyber-js@0.2.0/dist/kyber.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
   <script>
-    const questions = [
-      { q: "Що більше схоже на спокій?", a: ["вода", "дзвін", "вогонь", "порожнеча"] },
-      { q: "Що звучить, коли ти мовчиш?", a: ["вітер", "світло", "себе", "ніч"] },
-      { q: "Яке з цих не твоє?", a: ["шум", "каменюка", "думка", "пісок"] },
-      { q: "Що не можна втримати?", a: ["мить", "сон", "тінь", "спогад"] },
-      { q: "Що хоче залишитися?", a: ["слово", "мить", "вогонь", "спокій"] },
-      { q: "Який символ зараз ближчий?", a: ["🌊", "🔥", "🌑", "💨"] },
-      { q: "Куди веде ця фраза: «тиха тиша тисне»?", a: ["усередину", "назовні", "вгору", "в нікуди"] },
-      { q: "Що лишається після тебе?", a: ["голос", "сліпота", "коло", "рух"] },
-      { q: "Що не має форми, але тримає?", a: ["памʼять", "дихання", "думка", "сон"] },
-      { q: "Коли світ згасає, зʼявляється...", a: ["зірка", "я", "порожнеча", "джерело"] },
-      { q: "Що зникає, коли дивишся прямо?", a: ["страх", "тінь", "ілюзія", "вогонь"] }
+    const echoPhrases = [
+      "Твоя тиша памʼятає більше, ніж час.",
+      "Тінь говорить без слів.",
+      "Твоя мить — незнищенна.",
+      "Ти дихаєш крізь простір.",
+      "Світло знає тебе навіть у темряві."
     ];
 
-    const good = ["вода", "дзвін", "порожнеча", "себе", "мить", "спокій", "🌑", "усередину", "памʼять", "зірка", "ілюзія"];
-
-    const gate = document.getElementById("gate");
-    const result = document.getElementById("result");
-    const exportBox = document.getElementById("export");
-    const downloadBtn = document.getElementById("download");
-    const qrPassport = document.getElementById("qr-passport");
-    const qrValidate = document.getElementById("qr-validate");
-
-    let index = 0;
-    let answers = [];
-    let glyph = [];
-    let startTime = Date.now();
+    const localGlyphRaw = localStorage.getItem("resoglyph");
     let blobCache = null;
 
-    const selected = questions.sort(() => 0.5 - Math.random()).slice(0, 7);
-    const ritualMode = localStorage.getItem("ritualMode") === "true";
+    if (localGlyphRaw) {
+      document.getElementById("loadLocalBtn").style.display = "block";
+    }
+
+    function hashGlyph(glyph) {
+      return btoa(glyph.join('-')).slice(0, 24);
+    }
+
+    async function verifySignature(data, signature) {
+      const encoder = new TextEncoder();
+      const computed = btoa(String.fromCharCode(...encoder.encode(data))).slice(0, 32);
+      return computed === signature;
+    }
+
+    function drawViz(id, glyph) {
+      const canvas = document.getElementById("viz");
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const size = Math.max(5, Math.ceil(glyph.length / 2));
+      const cell = canvas.width / size;
+      for (let i = 0; i < size * size; i++) {
+        const char = id[i % id.length].charCodeAt(0);
+        const gradient = ctx.createLinearGradient(0, 0, cell, cell);
+        gradient.addColorStop(0, `#0ff`);
+        gradient.addColorStop(1, `#f0f`);
+        ctx.fillStyle = gradient;
+        ctx.fillRect((i % size) * cell, Math.floor(i / size) * cell, cell, cell);
+      }
+    }
+
+    function generateQR(id) {
+      const qrCanvas = document.getElementById("qr-code");
+      qrCanvas.style.display = "block";
+      QRCode.toCanvas(qrCanvas, `/validate.html?id=${id}`, { width: 200, color: { dark: '#0ff', light: '#000' } }, (err) => {
+        if (err) console.error(err);
+      });
+    }
 
     async function signData(data) {
       const encoder = new TextEncoder();
@@ -107,105 +128,102 @@
       return hash.slice(0, 32);
     }
 
-    function generateMultiQR(id) {
-      QRCode.toCanvas(qrPassport, `resonance-passport.html?id=${id}`, { width: 200, color: { dark: '#0ff', light: '#000' } }, (err) => {
-        if (err) console.error(err);
-      });
-      QRCode.toCanvas(qrValidate, `validate.html?id=${id}`, { width: 200, color: { dark: '#0ff', light: '#000' } }, (err) => {
-        if (err) console.error(err);
-      });
-      qrPassport.style.display = "block";
-      qrValidate.style.display = "block";
-    }
-
-    function showQuestion() {
-      if (index >= selected.length) return evaluate();
-
-      const q = selected[index];
-      const div = document.createElement("div");
-      div.className = "question";
-      div.innerHTML = `<p><b>${index + 1}.</b> ${q.q}</p>`;
-      q.a.forEach(opt => {
-        const btn = document.createElement("button");
-        btn.textContent = opt;
-        btn.setAttribute("data-text", opt);
-        btn.classList.add("glitch");
-        btn.onclick = () => {
-          const time = Date.now() - startTime;
-          answers.push({ a: opt, t: time });
-          glyph.push(opt);
-          index++;
-          gate.innerHTML = '';
-          startTime = Date.now();
-          showQuestion();
-        };
-        div.appendChild(btn);
-      });
-      gate.appendChild(div);
-    }
-
-    async function evaluate() {
-      gate.innerHTML = '';
-      let score = 0;
-      let fast = 0;
-      answers.forEach(x => {
-        if (x.t < 800) fast++;
-        if (good.includes(x.a)) score++;
-      });
-
-      let state = "", msg = "";
-      if (score >= 5 && fast < 3) {
-        state = "🌕 Повний резонанс";
-        msg = "Ти на частоті. Вітаю.";
-      } else if (score >= 3) {
-        state = "🌗 Коливання";
-        msg = "Ти близько, але щось ще шукає себе.";
-      } else {
-        state = "🌑 Несумісність";
-        msg = "Твоя хвиля ще не збіглась.";
+    async function generatePassport(glyph) {
+      if (!glyph || glyph.length < 7) {
+        alert("Гліф некоректний або неповний.");
+        return;
       }
-
-      const payload = {
+      const id = hashGlyph(glyph);
+      const echo = echoPhrases[Math.floor(Math.random() * echoPhrases.length)];
+      const passport = {
+        id,
         glyph,
-        timestamp: new Date().toISOString(),
-        resonance: state
+        date: new Date().toISOString(),
+        echo
       };
-
       const kyber = new Kyber.Kyber512();
       const { publicKey, secretKey } = await kyber.keygen();
-      const encrypted = await kyber.encrypt(publicKey, JSON.stringify(payload));
+      const encrypted = await kyber.encrypt(publicKey, JSON.stringify(passport));
       const encryptedStr = btoa(String.fromCharCode(...encrypted));
       const signature = await signData(encryptedStr);
-      const finalPayload = { encrypted: encryptedStr, signature, publicKey: btoa(String.fromCharCode(...publicKey)) };
+      const isValid = await verifySignature(encryptedStr, signature);
+      if (!isValid) {
+        alert("Помилка підпису паспорта.");
+        return;
+      }
+      const finalPassport = { encrypted: encryptedStr, signature, publicKey: btoa(String.fromCharCode(...publicKey)) };
+      document.getElementById("info").innerHTML = `
+        <p>🧬 <b>Гліф:</b> ${glyph.join(' + ')}</p>
+        <p>🧩 <b>ID:</b> ${id}</p>
+        <p>🪞 <b>Відлуння:</b> <i>“${echo}”</i></p>
+        <p>🔒 <b>Підпис:</b> ${signature.slice(0, 8)}...</p>
+      `;
+      document.getElementById("passportData").textContent = JSON.stringify(finalPassport, null, 2);
+      document.getElementById("saveBtn").style.display = "block";
+      document.getElementById("savePngBtn").style.display = "block";
+      document.getElementById("saveQrBtn").style.display = "block";
+      drawViz(id, glyph);
+      generateQR(id);
+    }
 
-      localStorage.setItem("resoglyph", JSON.stringify(finalPayload));
-      localStorage.setItem("resonanceState", state);
+    async function loadGlyph(e) {
+      const reader = new FileReader();
+      reader.onload = async function () {
+        try {
+          const data = JSON.parse(reader.result);
+          const glyph = data.glyph || (data.encrypted ? JSON.parse(atob(data.encrypted)).glyph : []);
+          if (!glyph.length) throw new Error("Гліф порожній або некоректний.");
+          if (data.signature && !(await verifySignature(data.encrypted, data.signature))) {
+            throw new Error("Підпис невалідний.");
+          }
+          generatePassport(glyph);
+        } catch (e) {
+          alert("Помилка при завантаженні файлу: " + e.message);
+        }
+      };
+      reader.readAsText(e.target.files[0]);
+    }
 
-      const id = btoa(glyph.join('-')).slice(0, 24);
-      result.innerHTML = `<b>${state}</b><br><br>🧬 Твій резогліф: <i>${glyph.join(" + ")}</i><br>🧩 <b>ID:</b> ${id}<br>🔒 <b>Підпис:</b> ${signature.slice(0, 8)}...<br>🌀 ${msg}`;
-      generateMultiQR(id);
-      exportBox.style.display = "block";
-      exportBox.textContent = JSON.stringify(finalPayload, null, 2);
-      downloadBtn.style.display = "inline-block";
-
-      if (ritualMode) {
-        setTimeout(() => {
-          window.open("resonance-passport.html", "_blank");
-        }, 2000);
+    async function useLocalGlyph() {
+      try {
+        const parsed = JSON.parse(localGlyphRaw);
+        const glyph = parsed.glyph || (parsed.encrypted ? JSON.parse(atob(parsed.encrypted)).glyph : []);
+        if (!glyph.length) throw new Error("Гліф порожній або некоректний.");
+        if (parsed.signature && !(await verifySignature(parsed.encrypted, parsed.signature))) {
+          throw new Error("Підпис невалідний.");
+        }
+        generatePassport(glyph);
+      } catch (e) {
+        alert("Помилка при читанні локального гліфа: " + e.message);
       }
     }
 
-    function downloadJSON() {
+    function downloadPassport() {
       if (!blobCache) {
-        blobCache = new Blob([exportBox.textContent], {type: "application/json"});
+        const data = document.getElementById("passportData").textContent;
+        blobCache = new Blob([data], {type: "application/json"});
       }
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blobCache);
-      a.download = "resoglyph.json";
+      a.download = "resonance-passport.json";
       a.click();
     }
 
-    showQuestion();
+    function downloadPng() {
+      const canvas = document.getElementById("viz");
+      const a = document.createElement("a");
+      a.href = canvas.toDataURL("image/png");
+      a.download = "resonance-passport.png";
+      a.click();
+    }
+
+    function downloadQr() {
+      const canvas = document.getElementById("qr-code");
+      const a = document.createElement("a");
+      a.href = canvas.toDataURL("image/png");
+      a.download = "resonance-passport-qr.png";
+      a.click();
+    }
   </script>
 </body>
 </html>
