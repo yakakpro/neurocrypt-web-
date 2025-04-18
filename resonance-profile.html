@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>👤 Резонансний Профіль</title>
+  <style>
+    body {
+      background: #0c0c0c;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      padding: 50px 30px;
+      max-width: 800px;
+      margin: auto;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    #matrix {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.1;
+      z-index: -1;
+    }
+    h1 {
+      font-size: 2em;
+      margin-bottom: 30px;
+      animation: glitch 3s infinite;
+    }
+    canvas {
+      display: block;
+      margin: 20px auto;
+      border: 1px solid #555;
+      background: #000;
+      animation: pulse 6s infinite;
+    }
+    button, input[type="text"], textarea {
+      background: #1a1a1a;
+      color: #eee;
+      padding: 15px;
+      border: 1px solid #444;
+      margin: 15px;
+      cursor: pointer;
+      font-size: 1em;
+      width: 80%;
+      animation: glitch 5s infinite;
+    }
+    button:hover, input:hover, textarea:hover {
+      background: #333;
+      transform: scale(1.05);
+    }
+    #profile {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 1.2em;
+      animation: glitch 5s infinite;
+    }
+    pre {
+      background: #111;
+      padding: 10px;
+      overflow-x: auto;
+      margin-top: 20px;
+    }
+    footer {
+      margin-top: 60px;
+      font-size: 0.8em;
+      color: #555;
+      animation: glitch 5s infinite;
+    }
+    .section {
+      margin: 20px 0;
+      padding: 10px;
+      border: 1px dashed #444;
+    }
+    @keyframes glitch {
+      0% { transform: translate(0); opacity: 1; }
+      2% { transform: translate(1px, 1px); opacity: 0.95; }
+      4% { transform: translate(-1px, -1px); opacity: 0.95; }
+      6% { transform: translate(0); opacity: 1; }
+      100% { transform: translate(0); opacity: 1; }
+    }
+    @keyframes pulse {
+      0% { filter: brightness(1); }
+      50% { filter: brightness(1.5); }
+      100% { filter: brightness(1); }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="matrix"></canvas>
+  <h1>👤 Резонансний Профіль</h1>
+  <p>Твій особистий простір у галактиці резонансу!</p>
+
+  <input type="text" id="profile-name" placeholder="Твоє ім’я в мережі">
+  <textarea id="profile-bio" rows="4" placeholder="Опиши себе в кількох словах"></textarea>
+  <button onclick="updateProfile()">🛠️ Оновити профіль</button>
+  <canvas id="profile-viz" width="400" height="400"></canvas>
+  <div id="profile"></div>
+  <pre id="profile-data" style="display:none;"></pre>
+  <button id="saveProfile" onclick="saveProfile()" style="display:none;">💾 Зберегти профіль</button>
+  <button id="savePng" onclick="savePng()" style="display:none;">🖼️ Зберегти як PNG</button>
+
+  <footer>created with 💠 by Ти & Резонанс</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/kyber-js@0.2.0/dist/kyber.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.min.js"></script>
+  <script>
+    // Matrix rain
+    const matrixCanvas = document.getElementById("matrix");
+    const ctx = matrixCanvas.getContext("2d");
+    matrixCanvas.height = window.innerHeight;
+    matrixCanvas.width = window.innerWidth;
+    const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ🌀";
+    const fontSize = 10;
+    const columns = matrixCanvas.width / fontSize;
+    const drops = Array(Math.floor(columns)).fill(1);
+    function drawMatrix() {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+      ctx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
+      ctx.fillStyle = "#0ff";
+      ctx.font = `${fontSize}px monospace`;
+      drops.forEach((y, i) => {
+        const text = chars.charAt(Math.floor(Math.random() * chars.length));
+        const x = i * fontSize;
+        ctx.fillText(text, x, y * fontSize);
+        if (y * fontSize > matrixCanvas.height && Math.random() > 0.975) drops[i] = 0;
+        drops[i]++;
+      });
+    }
+    setInterval(drawMatrix, 50);
+
+    // Profile visualization
+    const profileCanvas = document.getElementById("profile-viz");
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, profileCanvas.width / profileCanvas.height, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ canvas: profileCanvas });
+    renderer.setSize(profileCanvas.width, profileCanvas.height);
+    camera.position.z = 50;
+    let profileNodes = [];
+    let rotation = 0;
+
+    function drawProfile() {
+      scene.children.forEach(child => scene.remove(child));
+      profileNodes.forEach((node, i) => {
+        const geometry = new THREE.SphereGeometry(1, 32, 32);
+        const material = new THREE.MeshBasicMaterial({
+          color: node.resonance >= 60 ? 0x00ffff : 0xff00ff,
+          transparent: true,
+          opacity: 0.8
+        });
+        const sphere = new THREE.Mesh(geometry, material);
+        const angle = (i / profileNodes.length) * 2 * Math.PI;
+        const radius = 20 + (node.resonance || 0) / 5;
+        sphere.position.set(
+          radius * Math.cos(angle + rotation),
+          radius * Math.sin(angle + rotation),
+          Math.sin(i) * 10
+        );
+        scene.add(sphere);
+        if (i > 0) {
+          const prevAngle = ((i - 1) / profileNodes.length) * 2 * Math.PI;
+          const prevX = radius * Math.cos(prevAngle + rotation);
+          const prevY = radius * Math.sin(prevAngle + rotation);
+          const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(prevX, prevY, Math.sin(i - 1) * 10),
+            sphere.position
+          ]);
+          const lineMaterial = new THREE.LineBasicMaterial({ color: 0x00ffff, opacity: 0.5, transparent: true });
+          const line = new THREE.Line(lineGeometry, lineMaterial);
+          scene.add(line);
+        }
+      });
+      rotation += 0.01;
+      renderer.render(scene, camera);
+    }
+    setInterval(drawProfile, 16);
+
+    async function verifySignature(data, signature) {
+      const encoder = new TextEncoder();
+      const computed = btoa(String.fromCharCode(...encoder.encode(data))).slice(0, 32);
+      return computed === signature;
+    }
+
+    async function signData(data) {
+      const encoder = new TextEncoder();
+      const hash = btoa(String.fromCharCode(...encoder.encode(data)));
+      return hash.slice(0, 32);
+    }
+
+    async function updateProfile() {
+      try {
+        const name = document.getElementById("profile-name").value.trim();
+        const bio = document.getElementById("profile-bio").value.trim();
+        profileNodes = [];
+        let totalResonance = 0;
+        let glyphCount = 0;
+
+        const resoglyph = localStorage.getItem("resoglyph");
+        const community = localStorage.getItem("resonanceCommunity");
+        const analytics = localStorage.getItem("resonanceAnalytics");
+
+        if (resoglyph) {
+          const data = JSON.parse(resoglyph);
+          if (data.encrypted && data.signature && (await verifySignature(data.encrypted, data.signature))) {
+            const glyph = data.glyph || (data.encrypted ? JSON.parse(atob(data.encrypted)).glyph : []);
+            if (glyph.length) {
+              profileNodes.push({ type: "glyph", glyph, resonance: 100, timestamp: data.timestamp || new Date().toISOString() });
+              glyphCount++;
+              totalResonance += 100;
+            }
+          }
+        }
+
+        if (community) {
+          const posts = JSON.parse(community);
+          posts.forEach(post => {
+            if (post.encrypted && post.signature && verifySignature(post.encrypted, post.signature)) {
+              const data = JSON.parse(atob(post.encrypted));
+              profileNodes.push({ type: "post", glyph: data.glyph, resonance: data.resonance, timestamp: data.timestamp });
+              glyphCount++;
+              totalResonance += data.resonance;
+            }
+          });
+        }
+
+        if (analytics) {
+          const analyticsData = JSON.parse(analytics);
+          if (analyticsData.encrypted && analyticsData.signature && (await verifySignature(analyticsData.encrypted, analyticsData.signature))) {
+            const entries = JSON.parse(atob(analyticsData.encrypted));
+            entries.forEach(entry => {
+              profileNodes.push({ type: entry.type, glyph: entry.glyph, resonance: entry.resonance, timestamp: entry.timestamp });
+              glyphCount++;
+              totalResonance += entry.resonance;
+            });
+          }
+        }
+
+        profileNodes.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        const averageResonance = glyphCount ? (totalResonance / glyphCount).toFixed(1) : 0;
+        const profileData = {
+          name: name || "Резонансник",
+          bio: bio || "Таємничий мандрівник галактики резонансу",
+          nodes: profileNodes,
+          averageResonance,
+          timestamp: new Date().toISOString()
+        };
+
+        const kyber = new Kyber.Kyber512();
+        const { publicKey, secretKey } = await kyber.keygen();
+        const encrypted = await kyber.encrypt(publicKey, JSON.stringify(profileData));
+        const encryptedStr = btoa(String.fromCharCode(...encrypted));
+        const signature = await signData(encryptedStr);
+        const finalProfile = { encrypted: encryptedStr, signature, publicKey: btoa(String.fromCharCode(...publicKey)) };
+        localStorage.setItem("resonanceProfile", JSON.stringify(finalProfile));
+
+        let output = `<div class="section">`;
+        output += `<b>${profileData.name}</b><br>`;
+        output += `${profileData.bio}<br>`;
+        output += `🔗 Середній резонанс: ${averageResonance}%<br>`;
+        output += `🧬 Гліфів: ${glyphCount}<br>`;
+        output += `</div>`;
+        output += `<div class="section">`;
+        output += `Історія:<br>`;
+        profileNodes.forEach((node, i) => {
+          if (node.type === "glyph") {
+            output += `🧬 Гліф ${i + 1}: ${node.glyph.join(" + ")} (${node.timestamp})<br>`;
+          } else if (node.type === "post") {
+            output += `📝 Пост ${i + 1}: ${node.resonance}% резонансу (${node.timestamp})<br>`;
+          } else if (node.type === "identity") {
+            output += `🔁 Перевірка ${i + 1}: ${node.resonance}% збігу (${node.timestamp})<br>`;
+          }
+        });
+        output += `</div>`;
+
+        document.getElementById("profile").innerHTML = output;
+        document.getElementById("profile-data").textContent = JSON.stringify(finalProfile, null, 2);
+        document.getElementById("profile-data").style.display = "block";
+        document.getElementById("saveProfile").style.display = "inline-block";
+        document.getElementById("savePng").style.display = "inline-block";
+        drawProfile();
+      } catch (e) {
+        alert("Помилка оновлення профілю: " + e.message);
+      }
+    }
+
+    function saveProfile() {
+      if (!blobCache) {
+        const profileData = localStorage.getItem("resonanceProfile");
+        blobCache = new Blob([profileData], {type: "application/json"});
+      }
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blobCache);
+      a.download = "resonance-profile.json";
+      a.click();
+    }
+
+    function savePng() {
+      const a = document.createElement("a");
+      a.href = profileCanvas.toDataURL("image/png");
+      a.download = "resonance-profile.png";
+      a.click();
+    }
+
+    let blobCache = null;
+  </script>
+</body>
+</html>
