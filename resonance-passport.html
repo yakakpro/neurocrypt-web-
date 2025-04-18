@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8">
-  <title>🪪 Створити Резонанс-Паспорт</title>
+  <title>🪪 Резонанс-Паспорт</title>
   <style>
     body {
       background: #0c0c0c;
@@ -20,27 +20,33 @@
       border: 1px solid #444;
       margin-top: 10px;
       cursor: pointer;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
     }
     canvas {
       display: block;
       margin: 20px auto;
       border: 1px solid #555;
+      background: #000;
     }
     pre {
       background: #111;
       padding: 10px;
       overflow-x: auto;
+      margin-top: 20px;
     }
+    #info { text-align: center; margin-top: 20px; }
   </style>
 </head>
 <body>
   <h2>🪪 Створити Резонанс-Паспорт</h2>
-  <p style="text-align:center;">Завантаж резогліф — і отримаєш свій ID, образ, відлуння та ключ.</p>
+  <p style="text-align:center;">Завантаж резогліф з капчі — і отримаєш ID, візуальний код, фразу-відлуння.</p>
 
   <input type="file" accept=".json" onchange="loadGlyph(event)">
   <canvas id="viz" width="200" height="200"></canvas>
   <div id="info"></div>
-  <button onclick="downloadPassport()" style="display:none;" id="saveBtn">💾 Зберегти Паспорт</button>
+  <button id="saveBtn" onclick="downloadPassport()" style="display:none;">💾 Зберегти Паспорт</button>
   <pre id="passportData"></pre>
 
   <script>
@@ -90,15 +96,16 @@
           <p>🧩 <b>ID:</b> ${id}</p>
           <p>🪞 <b>Відлуння:</b> <i>“${echo}”</i></p>
         `;
-        document.getElementById("saveBtn").style.display = "inline-block";
         document.getElementById("passportData").textContent = JSON.stringify(passport, null, 2);
+        document.getElementById("saveBtn").style.display = "block";
         drawViz(id);
       };
       reader.readAsText(e.target.files[0]);
     }
 
     function downloadPassport() {
-      const blob = new Blob([document.getElementById("passportData").textContent], {type: "application/json"});
+      const data = document.getElementById("passportData").textContent;
+      const blob = new Blob([data], {type: "application/json"});
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
       a.download = "resonance-passport.json";
