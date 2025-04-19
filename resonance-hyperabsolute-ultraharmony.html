@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>🌌 Резонансна Позаабсолютна Надультрагармонія</title>
+  <style>
+    body {
+      background: #0c0c0c;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      padding: 50px 30px;
+      max-width: 800px;
+      margin: auto;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    #matrix {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.1;
+      z-index: -1;
+    }
+    h1 {
+      font-size: 2em;
+      margin-bottom: 30px;
+      animation: glitch 3s infinite;
+    }
+    canvas {
+      display: block;
+      margin: 20px auto;
+      border: 1px solid #555;
+      background: #000;
+      animation: pulse 6s infinite;
+    }
+    button, input[type="number"], select {
+      background: #1a1a1a;
+      color: #eee;
+      padding: 15px;
+      border: 1px solid #444;
+      margin: 15px;
+      cursor: pointer;
+      font-size: 1em;
+      width: 80%;
+      animation: glitch 5s infinite;
+    }
+    button:hover, input:hover, select:hover {
+      background: #333;
+      transform: scale(1.05);
+    }
+    #hyperabsolute-ultraharmony {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 1.2em;
+      animation: glitch 5s infinite;
+    }
+    pre {
+      background: #111;
+      padding: 10px;
+      overflow-x: auto;
+      margin-top: 20px;
+    }
+    footer {
+      margin-top: 60px;
+      font-size: 0.8em;
+      color: #555;
+      animation: glitch 5s infinite;
+    }
+    .controls {
+      margin: 20px 0;
+    }
+    @keyframes glitch {
+      0% { transform: translate(0); opacity: 1; }
+      2% { transform: translate(1px, 1px); opacity: 0.95; }
+      4% { transform: translate(-1px, -1px); opacity: 0.95; }
+      6% { transform: translate(0); opacity: 1; }
+      100% { transform: translate(0); opacity: 1; }
+    }
+    @keyframes pulse {
+      0% { filter: brightness(1); }
+      50% { filter: brightness(1.5); }
+      100% { filter: brightness(1); }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="matrix"></canvas>
+  <h1>🌌 Резонансна Позаабсолютна Надультрагармонія</h1>
+  <p>Злий усі надабсолютні ультранадгармонії в єдину позаабсолютну надультрагармонію!</p>
+
+  <div class="controls">
+    <input type="number" id="entropy-factor" placeholder="Фактор ентропії (0-1)" min="0" max="1" step="0.1">
+    <input type="number" id="hyperabsolute-ultraharmony-level" placeholder="Надультрагармонійний рівень (0-10)" min="0" max="10" step="1">
+    <select id="fusion-type">
+      <option value="ultrabsolute-hyperharmony">Надабсолютні Ультранадгармонії</option>
+      <option value="absolute-transultraharmony">Абсолютні Трансультрагармонії</option>
+      <option value="all">Усе</option>
+    </select>
+    <button onclick="startHyperabsoluteUltraharmony()">▶️ Запустити позаабсолютну надультрагармонію</button>
+    <button onclick="stopHyperabsoluteUltraharmony()">⏹️ Зупинити позаабсолютну надультрагармонію</button>
+    <button onclick="saveMoment()">📍 Зберегти момент</button>
+  </div>
+  <canvas id="hyperabsolute-ultraharmony-viz" width="400" height="400"></canvas>
+  <div id="hyperabsolute-ultraharmony"></div>
+  <pre id="hyperabsolute-ultraharmony-data" style="display:none;"></pre>
+  <button id="saveHyperabsoluteUltraharmony" onclick="saveHyperabsoluteUltraharmony()" style="display:none;">💾 Зберегти позаабсолютну надультрагармонію</button>
+  <button id="savePng" onclick="savePng()" style="display:none;">🖼️ Зберегти як PNG</button>
+
+  <footer>created with 💠 by Ти & Резонанс</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/kyber-js@0.2.0/dist/kyber.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.min.js"></script>
+  <script>
+    // Matrix rain
+    const matrixCanvas = document.getElementById("matrix");
+    const ctx = matrixCanvas.getContext("2d");
+    matrixCanvas.height = window.innerHeight;
+    matrixCanvas.width = window.innerWidth;
+    const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ🌀";
+    const fontSize = 10;
+    const columns = matrixCanvas.width / fontSize;
+    const drops = Array(Math.floor(columns)).fill(1);
+    function drawMatrix() {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+      ctx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
+      ctx.fillStyle = "#0ff";
+      ctx.font = `${fontSize}px monospace`;
+      drops.forEach((y, i) => {
+        const text = chars.charAt(Math.floor(Math.random() * chars.length));
+        const x = i * fontSize;
+        ctx.fillText(text, x, y * fontSize);
+        if (y * fontSize > matrixCanvas.height && Math.random() > 0.975) drops[i] = 0;
+        drops[i]++;
+      });
+    }
+    setInterval(drawMatrix, 50);
+
+    // Hyperabsolute Ultraharmony visualization
+    const ultraharmonyCanvas = document.getElementById("hyperabsolute-ultraharmony-viz");
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, ultraharmonyCanvas.width / ultraharmonyCanvas.height, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ canvas: ultraharmonyCanvas });
+    renderer.setSize(ultraharmonyCanvas.width, ultraharmonyCanvas.height);
+    camera.position.z = 50;
+    let elements = [];
+    let moments = [];
+    let ultraharmonyRunning = false;
+    let rotation = 0;
+
+    function drawHyperabsoluteUltraharmony() {
+      if (!ultraharmonyRunning) return;
+      scene.children.forEach(child => scene.remove(child));
+      const ultraharmonyCore = new THREE.SphereGeometry(37, 64, 64);
+      const coreMaterial = new THREE.MeshBasicMaterial({
+        color: 0x00ffff,
+        transparent: true,
+        opacity: 0.9
+      });
+      const core = new THREE.Mesh(ultraharmonyCore, coreMaterial);
+      core.position.set(0, 0, 0);
+      scene.add(core);
+      elements.forEach((element, i) => {
+        const geometry = new THREE.SphereGeometry(8.5, 16, 16);
+        const material = new THREE.MeshBasicMaterial({
+          color: element.resonance >= 60 ? 0x00ffff : 0xff00ff,
+          transparent: true,
+          opacity: 0.6
+        });
+        const sphere = new THREE.Mesh(geometry, material);
+        const angle = (i / elements.length) * 2 * Math.PI;
+        const radius = 84 + (element.resonance || 0) / 10;
+        sphere.position.set(
+          radius * Math.cos(angle + rotation),
+          radius * Math.sin(angle + rotation),
+          Math.sin(i) * 5
+        );
+        sphere.userData = element;
+        scene.add(sphere);
+        const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+          sphere.position,
+          core.position
+        ]);
+        const lineMaterial = new THREE.LineBasicMaterial({ color: 0x00ffff, opacity: 0.3, transparent: true });
+        const line = new THREE.Line(lineGeometry, lineMaterial);
+        scene.add(line);
+      });
+      rotation += 0.34;
+      renderer.render(scene, camera);
+    }
+    setInterval(drawHyperabsoluteUltraharmony, 16);
+
+    // Mouse click interaction
+    ultraharmonyCanvas.addEventListener('click', (event) => {
+      const mouse = new THREE.Vector2(
+        (event.clientX / ultraharmonyCanvas.clientWidth) * 2 - 1,
+        -(event.clientY / ultraharmonyCanvas.clientHeight) * 2 + 1
+      );
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(scene.children);
+      if (intersects.length > 0) {
+        const element = intersects[0].object.userData;
+        if (element) {
+          let output = `<br>📍 Вибрано елемент: ${element.name || element.description || element.singularities?.length || element.elements?.length || "невідомо"}<br>`;
+          if (element.type === "glyph") {
+            output += `🧬 Гліф: ${element.glyph.join(" + ")}<br>`;
+            output += `🔗 Резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "network") {
+            output += `🌐 Мережа: ${element.nodes.length} вузлів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "rule") {
+            output += `📏 Тип правила: ${element.ruleType}<br>`;
+            output += `🔗 Поріг: ${element.threshold}%`;
+          } else if (element.type === "cosmos") {
+            output += `🌠 Космос: ${element.singularities.length} сингулярів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "absolute") {
+            output += `🌟 Абсолют: ${element.elements.length} елементів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "infinity") {
+            output += `∞ Нескінченність: ${element.elements.length} елементів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "transcendence") {
+            output += `✨ Трансцендентність: ${element.elements.length} елементів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "omnireality") {
+            output += `🌌 Омніреальність: ${element.elements.length} елементів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "universalia") {
+            output += `🌍 Універсалія: ${element.elements.length} елементів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "totalia") {
+            output += `🌐 Тоталія: ${element.elements.length} елементів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "ultimate-unity") {
+            output += `🌞 Абсолютна єдність: ${element.elements.length} елементів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "oversoul") {
+            output += `🌌 Надсутність: ${element.elements.length} елементів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "omnion") {
+            output += `🌟 Всеєдність: ${element.elements.length} елементів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "absolute-omnion") {
+            output += `🌌 Абсолютна всеєдність: ${element.elements.length} елементів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "transdimensional-unity") {
+            output += `🌌 Трансвимірна єдність: ${element.elements.length} елементів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "ultradimensional-unity") {
+            output += `🌌 Понадвимірна єдність: ${element.elements.length} елементів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "omnicosmic-unity") {
+            output += `🌌 Омнікосмічна єдність: ${element.elements.length} елементів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "absolute-hyperreality") {
+            output += `🌌 Абсолютна надреальність: ${element.elements.length} елементів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "transhyperreality") {
+            output += `🌌 Транснадреальність: ${element.elements.length} елементів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "omnihyperreality") {
+            output += `🌌 Омнінадреальність: ${element.elements.length} елементів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "ultrahyperreality") {
+            output += `🌌 Ультранадреальність: ${element.elements.length} елементів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "absolute-ultrareality") {
+            output += `🌌 Абсолютна Понадреальність: ${element.elements.length} елементів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "transcendent-omnion") {
+            output += `🌌 Трансцендентна Всеєдність: ${element.elements.length} елементів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "absolute-singularity") {
+            output += `🌌 Абсолютна Сингулярність: ${element.elements.length} елементів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "eternal-unity") {
+            output += `🌌 Вічна Єдність: ${element.elements.length} елементів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "ultraeternal-harmony") {
+            output += `🌌 Надвічна Гармонія: ${element.elements.length} елементів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "absolute-cosmoharmony") {
+            output += `🌌 Абсолютна Космогармонія: ${element.elements.length} елементів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "omniabsolute-harmony") {
+            output += `🌌 Позаабсолютна Омнігармонія: ${element.elements.length} елементів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "transinfinite-metaharmony") {
+            output += `🌌 Трансбезмежна Метагармонія: ${element.elements.length} елементів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "absolute-metaomniharmony") {
+            output += `🌌 Абсолютна Надметаомнігармонія: ${element.elements.length} елементів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "omniultra-transcendent-harmony") {
+            output += `🌌 Позаомнітрансцендентна Ультрагармонія: ${element.elements.length} елементів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "absolute-ultraomniharmony") {
+            output += `🌌 Абсолютна Позаультраомнігармонія: ${element.elements.length} елементів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "transabsolute-omnihyperharmony") {
+            output += `🌌 Трансабсолютна Омнінадгармонія: ${element.elements.length} елементів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "transhyperabsolute-harmony") {
+            output += `🌌 Позаабсолютна Транснадгармонія: ${element.elements.length} елементів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "ultraabsolute-transharmony") {
+            output += `🌌 Ультрапозаабсолютна Надтрансгармонія: ${element.elements.length} елементів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "absolute-transultraharmony") {
+            output += `🌌 Абсолютна Трансультрагармонія: ${element.elements.length} елементів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          } else if (element.type === "ultrabsolute-hyperharmony") {
+            output += `🌌 Надабсолютна Ультранадгармонія: ${element.elements.length} елементів<br>`;
+            output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+          }
+          output += `<br>🕒 ${element.timestamp}<br>`;
+          document.getElementById("hyperabsolute-ultraharmony").innerHTML += output;
+        }
+      }
+    });
+
+    async function verifySignature(data, signature) {
+      const encoder = new TextEncoder();
+      const computed = btoa(String.fromCharCode(...encoder.encode(data))).slice(0, 32);
+      return computed === signature;
+    }
+
+    async function signData(data) {
+      const encoder = new TextEncoder();
+      const hash = btoa(String.fromCharCode(...encoder.encode(data)));
+      return hash.slice(0, 32);
+    }
+
+    async function startHyperabsoluteUltraharmony() {
+      try {
+        const entropy = parseFloat(document.getElementById("entropy-factor").value) || 0.5;
+        const hyperabsoluteUltraharmonyLevel = parseInt(document.getElementById("hyperabsolute-ultraharmony-level").value) || 5;
+        const fusionType = document.getElementById("fusion-type").value;
+        if (entropy < 0 || entropy > 1) {
+          alert("Фактор ентропії має бути від 0 до 1!");
+          return;
+        }
+        if (hyperabsoluteUltraharmonyLevel < 0 || hyperabsoluteUltraharmonyLevel > 10) {
+          alert("Надультрагармонійний рівень має бути від 0 до 10!");
+          return;
+        }
+
+        elements = [];
+        const sources = [
+          { key: "resoglyph", type: "glyph" },
+          { key: "resonanceCommunity", type: "glyph" },
+          { key: "resonanceMarket", type: "glyph" },
+          { key: "resonanceOracle", type: "glyph" },
+          { key: "resonanceConstructor", type: "network" },
+          { key: "resonanceConnector", type: "network" },
+          { key: "resonanceArchitect", type: "rule" },
+          { key: "resonanceCosmos", type: "cosmos" },
+          { key: "resonanceAbsolute", type: "absolute" },
+          { key: "resonanceInfinity", type: "infinity" },
+          { key: "resonanceTranscendence", type: "transcendence" },
+          { key: "resonanceOmnireality", type: "omnireality" },
+          { key: "resonanceUniversalia", type: "universalia" },
+          { key: "resonanceTotalia", type: "totalia" },
+          { key: "resonanceUltimateUnity", type: "ultimate-unity" },
+          { key: "resonanceOversoul", type: "oversoul" },
+          { key: "resonanceOmnion", type: "omnion" },
+          { key: "resonanceAbsoluteOmnion", type: "absolute-omnion" },
+          { key: "resonanceTransdimensionalUnity", type: "transdimensional-unity" },
+          { key: "resonanceUltradimensionalUnity", type: "ultradimensional-unity" },
+          { key: "resonanceOmnicosmicUnity", type: "omnicosmic-unity" },
+          { key: "resonanceAbsoluteHyperreality", type: "absolute-hyperreality" },
+          { key: "resonanceTranshyperreality", type: "transhyperreality" },
+          { key: "resonanceOmnihyperreality", type: "omnihyperreality" },
+          { key: "resonanceUltrahyperreality", type: "ultrahyperreality" },
+          { key: "resonanceAbsoluteUltrareality", type: "absolute-ultrareality" },
+          { key: "resonanceTranscendentOmnion", type: "transcendent-omnion" },
+          { key: "resonanceAbsoluteSingularity", type: "absolute-singularity" },
+          { key: "resonanceEternalUnity", type: "eternal-unity" },
+          { key: "resonanceUltraeternalHarmony", type: "ultraeternal-harmony" },
+          { key: "resonanceAbsoluteCosmoharmony", type: "absolute-cosmoharmony" },
+          { key: "resonanceOmniabsoluteHarmony", type: "omniabsolute-harmony" },
+          { key: "resonanceTransinfiniteMetaharmony", type: "transinfinite-metaharmony" },
+          { key: "resonanceAbsoluteMetaomniharmony", type: "absolute-metaomniharmony" },
+          { key: "resonanceOmniultraTranscendentHarmony", type: "omniultra-transcendent-harmony" },
+          { key: "resonanceAbsoluteUltraomniharmony", type: "absolute-ultraomniharmony" },
+          { key: "resonanceTransabsoluteOmnihyperharmony", type: "transabsolute-omnihyperharmony" },
+          { key: "resonanceTranshyperabsoluteHarmony", type: "transhyperabsolute-harmony" },
+          { key: "resonanceUltraabsoluteTransharmony", type: "ultraabsolute-transharmony" },
+          { key: "resonanceAbsoluteTransultraharmony", type: "absolute-transultraharmony" },
+          { key: "resonanceUltrabsoluteHyperharmony", type: "ultrabsolute-hyperharmony" }
+        ];
+
+        for (const source of sources) {
+          if (fusionType !== "all" && source.type !== fusionType) continue;
+          const data = localStorage.getItem(source.key);
+          if (data) {
+            const parsed = JSON.parse(data);
+            if (Array.isArray(parsed)) {
+              parsed.forEach(item => {
+                if (item.encrypted && item.signature && verifySignature(item.encrypted, item.signature)) {
+                  const eventData = JSON.parse(atob(item.encrypted));
+                  if (source.type === "glyph" && eventData.glyph) {
+                    elements.push({
+                      type: source.type,
+                      name: eventData.title || source.key,
+                      glyph: eventData.glyph,
+                      resonance: eventData.resonance || 60,
+                      timestamp: eventData.timestamp || new Date().toISOString()
+                    });
+                  } else if (source.type === "network" && eventData.nodes) {
+                    elements.push({
+                      type: source.type,
+                      name: source.key,
+                      nodes: eventData.nodes,
+                      resonance: eventData.nodes.reduce((sum, node) => sum + (node.resonance || 60), 0) / eventData.nodes.length,
+                      timestamp: eventData.timestamp || new Date().toISOString()
+                    });
+                  }
+                }
+              });
+            } else if (parsed.encrypted && parsed.signature && (await verifySignature(parsed.encrypted, parsed.signature))) {
+              const eventData = JSON.parse(atob(parsed.encrypted));
+              if (source.type === "glyph" && eventData.glyph) {
+                elements.push({
+                  type: source.type,
+                  name: eventData.title || source.key,
+                  glyph: eventData.glyph,
+                  resonance: eventData.resonance || 60,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "network" && eventData.nodes) {
+                elements.push({
+                  type: source.type,
+                  name: source.key,
+                  nodes: eventData.nodes,
+                  resonance: eventData.nodes.reduce((sum, node) => sum + (node.resonance || node.probability * 100 || 60), 0) / eventData.nodes.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "rule" && eventData.nodes) {
+                elements.push({
+                  type: source.type,
+                  description: eventData.description,
+                  ruleType: eventData.ruleType,
+                  threshold: eventData.threshold,
+                  entropy: eventData.entropy,
+                  resonance: eventData.nodes.reduce((sum, node) => sum + (node.resonance || 60), 0) / eventData.nodes.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "cosmos" && eventData.singularities) {
+                elements.push({
+                  type: source.type,
+                  singularities: eventData.singularities,
+                  resonance: eventData.singularities.reduce((sum, s) => sum + (s.elements.reduce((esum, e) => esum + (e.resonance || 60), 0) / s.elements.length), 0) / eventData.singularities.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "absolute" && eventData.elements) {
+                elements.push({
+                  type: source.type,
+                  elements: eventData.elements,
+                  resonance: eventData.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / eventData.elements.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "infinity" && eventData.elements) {
+                elements.push({
+                  type: source.type,
+                  elements: eventData.elements,
+                  resonance: eventData.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / eventData.elements.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "transcendence" && eventData.elements) {
+                elements.push({
+                  type: source.type,
+                  elements: eventData.elements,
+                  resonance: eventData.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / eventData.elements.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "omnireality" && eventData.elements) {
+                elements.push({
+                  type: source.type,
+                  elements: eventData.elements,
+                  resonance: eventData.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / eventData.elements.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "universalia" && eventData.elements) {
+                elements.push({
+                  type: source.type,
+                  elements: eventData.elements,
+                  resonance: eventData.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / eventData.elements.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "totalia" && eventData.elements) {
+                elements.push({
+                  type: source.type,
+                  elements: eventData.elements,
+                  resonance: eventData.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / eventData.elements.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "ultimate-unity" && eventData.elements) {
+                elements.push({
+                  type: source.type,
+                  elements: eventData.elements,
+                  resonance: eventData.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / eventData.elements.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "oversoul" && eventData.elements) {
+                elements.push({
+                  type: source.type,
+                  elements: eventData.elements,
+                  resonance: eventData.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / eventData.elements.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "omnion" && eventData.elements) {
+                elements.push({
+                  type: source.type,
+                  elements: eventData.elements,
+                  resonance: eventData.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / eventData.elements.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "absolute-omnion" && eventData.elements) {
+                elements.push({
+                  type: source.type,
+                  elements: eventData.elements,
+                  resonance: eventData.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / eventData.elements.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "transdimensional-unity" && eventData.elements) {
+                elements.push({
+                  type: source.type,
+                  elements: eventData.elements,
+                  resonance: eventData.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / eventData.elements.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "ultradimensional-unity" && eventData.elements) {
+                elements.push({
+                  type: source.type,
+                  elements: eventData.elements,
+                  resonance: eventData.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / eventData.elements.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "omnicosmic-unity" && eventData.elements) {
+                elements.push({
+                  type: source.type,
+                  elements: eventData.elements,
+                  resonance: eventData.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / eventData.elements.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "absolute-hyperreality" && eventData.elements) {
+                elements.push({
+                  type: source.type,
+                  elements: eventData.elements,
+                  resonance: eventData.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / eventData.elements.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "transhyperreality" && eventData.elements) {
+                elements.push({
+                  type: source.type,
+                  elements: eventData.elements,
+                  resonance: eventData.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / eventData.elements.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "omnihyperreality" && eventData.elements) {
+                elements.push({
+                  type: source.type,
+                  elements: eventData.elements,
+                  resonance: eventData.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / eventData.elements.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "ultrahyperreality" && eventData.elements) {
+                elements.push({
+                  type: source.type,
+                  elements: eventData.elements,
+                  resonance: eventData.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / eventData.elements.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "absolute-ultrareality" && eventData.elements) {
+                elements.push({
+                  type: source.type,
+                  elements: eventData.elements,
+                  resonance: eventData.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / eventData.elements.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "transcendent-omnion" && eventData.elements) {
+                elements.push({
+                  type: source.type,
+                  elements: eventData.elements,
+                  resonance: eventData.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / eventData.elements.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "absolute-singularity" && eventData.elements) {
+                elements.push({
+                  type: source.type,
+                  elements: eventData.elements,
+                  resonance: eventData.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / eventData.elements.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "eternal-unity" && eventData.elements) {
+                elements.push({
+                  type: source.type,
+                  elements: eventData.elements,
+                  resonance: eventData.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / eventData.elements.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "ultraeternal-harmony" && eventData.elements) {
+                elements.push({
+                  type: source.type,
+                  elements: eventData.elements,
+                  resonance: eventData.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / eventData.elements.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "absolute-cosmoharmony" && eventData.elements) {
+                elements.push({
+                  type: source.type,
+                  elements: eventData.elements,
+                  resonance: eventData.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / eventData.elements.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "omniabsolute-harmony" && eventData.elements) {
+                elements.push({
+                  type: source.type,
+                  elements: eventData.elements,
+                  resonance: eventData.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / eventData.elements.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "transinfinite-metaharmony" && eventData.elements) {
+                elements.push({
+                  type: source.type,
+                  elements: eventData.elements,
+                  resonance: eventData.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / eventData.elements.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "absolute-metaomniharmony" && eventData.elements) {
+                elements.push({
+                  type: source.type,
+                  elements: eventData.elements,
+                  resonance: eventData.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / eventData.elements.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "omniultra-transcendent-harmony" && eventData.elements) {
+                elements.push({
+                  type: source.type,
+                  elements: eventData.elements,
+                  resonance: eventData.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / eventData.elements.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "absolute-ultraomniharmony" && eventData.elements) {
+                elements.push({
+                  type: source.type,
+                  elements: eventData.elements,
+                  resonance: eventData.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / eventData.elements.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "transabsolute-omnihyperharmony" && eventData.elements) {
+                elements.push({
+                  type: source.type,
+                  elements: eventData.elements,
+                  resonance: eventData.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / eventData.elements.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "transhyperabsolute-harmony" && eventData.elements) {
+                elements.push({
+                  type: source.type,
+                  elements: eventData.elements,
+                  resonance: eventData.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / eventData.elements.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "ultraabsolute-transharmony" && eventData.elements) {
+                elements.push({
+                  type: source.type,
+                  elements: eventData.elements,
+                  resonance: eventData.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / eventData.elements.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "absolute-transultraharmony" && eventData.elements) {
+                elements.push({
+                  type: source.type,
+                  elements: eventData.elements,
+                  resonance: eventData.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / eventData.elements.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              } else if (source.type === "ultrabsolute-hyperharmony" && eventData.elements) {
+                elements.push({
+                  type: source.type,
+                  elements: eventData.elements,
+                  resonance: eventData.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / eventData.elements.length,
+                  timestamp: eventData.timestamp || new Date().toISOString()
+                });
+              }
+            }
+          }
+        }
+
+        if (elements.length === 0) {
+          alert("Немає елементів для створення позаабсолютної надультрагармонії!");
+          return;
+        }
+
+        // Apply entropy and hyperabsolute ultraharmony level
+        elements.forEach(element => {
+          if (Math.random() < entropy) {
+            element.resonance = Math.max(0, Math.min(100, element.resonance + (Math.random() * 20 - 10)));
+          }
+          element.resonance = Math.min(100, element.resonance * (1 + hyperabsoluteUltraharmonyLevel / 10));
+        });
+
+        ultraharmonyRunning = true;
+        const ultraharmonyData = {
+          elements,
+          moments,
+          entropy,
+          hyperabsoluteUltraharmonyLevel,
+          fusionType,
+          timestamp: new Date().toISOString()
+        };
+
+        const kyber = new Kyber.Kyber512();
+        const { publicKey, secretKey } = await kyber.keygen();
+        const encrypted = await kyber.encrypt(publicKey, JSON.stringify(ultraharmonyData));
+        const encryptedStr = btoa(String.fromCharCode(...encrypted));
+        const signature = await signData(encryptedStr);
+        const finalUltraharmony = { encrypted: encryptedStr, signature, publicKey: btoa(String.fromCharCode(...publicKey)) };
+        localStorage.setItem("resonanceHyperabsoluteUltraharmony", JSON.stringify(finalUltraharmony));
+
+        displayElements(elements);
+        document.getElementById("hyperabsolute-ultraharmony-data").textContent = JSON.stringify(finalUltraharmony, null, 2);
+        document.getElementById("hyperabsolute-ultraharmony-data").style.display = "block";
+        document.getElementById("saveHyperabsoluteUltraharmony").style.display = "inline-block";
+        document.getElementById("savePng").style.display = "inline-block";
+      } catch (e) {
+        alert("Помилка запуску позаабсолютної надультрагармонії: " + e.message);
+      }
+    }
+
+    function displayElements(displayElements) {
+      let output = `🌌 Елементів у позаабсолютній надультрагармонії: ${displayElements.length}<br>`;
+      displayElements.forEach((element, i) => {
+        output += `<div class="element">`;
+        output += `📍 Елемент ${i + 1}: ${element.name || element.description || element.singularities?.length || element.elements?.length || "невідомо"}<br>`;
+        if (element.type === "glyph") {
+          output += `🧬 Гліф: ${element.glyph.join(" + ")}<br>`;
+          output += `🔗 Резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "network") {
+          output += `🌐 Мережа: ${element.nodes.length} вузлів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "rule") {
+          output += `📏 Тип правила: ${element.ruleType}<br>`;
+          output += `🔗 Поріг: ${element.threshold}%`;
+        } else if (element.type === "cosmos") {
+          output += `🌠 Космос: ${element.singularities.length} сингулярів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "absolute") {
+          output += `🌟 Абсолют: ${element.elements.length} елементів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "infinity") {
+          output += `∞ Нескінченність: ${element.elements.length} елементів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "transcendence") {
+          output += `✨ Трансцендентність: ${element.elements.length} елементів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "omnireality") {
+          output += `🌌 Омніреальність: ${element.elements.length} елементів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "universalia") {
+          output += `🌍 Універсалія: ${element.elements.length} елементів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "totalia") {
+          output += `🌐 Тоталія: ${element.elements.length} елементів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "ultimate-unity") {
+          output += `🌞 Абсолютна єдність: ${element.elements.length} елементів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "oversoul") {
+          output += `🌌 Надсутність: ${element.elements.length} елементів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "omnion") {
+          output += `🌟 Всеєдність: ${element.elements.length} елементів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "absolute-omnion") {
+          output += `🌌 Абсолютна всеєдність: ${element.elements.length} елементів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "transdimensional-unity") {
+          output += `🌌 Трансвимірна єдність: ${element.elements.length} елементів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "ultradimensional-unity") {
+          output += `🌌 Понадвимірна єдність: ${element.elements.length} елементів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "omnicosmic-unity") {
+          output += `🌌 Омнікосмічна єдність: ${element.elements.length} елементів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "absolute-hyperreality") {
+          output += `🌌 Абсолютна надреальність: ${element.elements.length} елементів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "transhyperreality") {
+          output += `🌌 Транснадреальність: ${element.elements.length} елементів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "omnihyperreality") {
+          output += `🌌 Омнінадреальність: ${element.elements.length} елементів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "ultrahyperreality") {
+          output += `🌌 Ультранадреальність: ${element.elements.length} елементів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "absolute-ultrareality") {
+          output += `🌌 Абсолютна Понадреальність: ${element.elements.length} елементів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "transcendent-omnion") {
+          output += `🌌 Трансцендентна Всеєдність: ${element.elements.length} елементів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "absolute-singularity") {
+          output += `🌌 Абсолютна Сингулярність: ${element.elements.length} елементів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "eternal-unity") {
+          output += `🌌 Вічна Єдність: ${element.elements.length} елементів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "ultraeternal-harmony") {
+          output += `🌌 Надвічна Гармонія: ${element.elements.length} елементів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "absolute-cosmoharmony") {
+          output += `🌌 Абсолютна Космогармонія: ${element.elements.length} елементів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "omniabsolute-harmony") {
+          output += `🌌 Позаабсолютна Омнігармонія: ${element.elements.length} елементів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "transinfinite-metaharmony") {
+          output += `🌌 Трансбезмежна Метагармонія: ${element.elements.length} елементів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "absolute-metaomniharmony") {
+          output += `🌌 Абсолютна Надметаомнігармонія: ${element.elements.length} елементів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "omniultra-transcendent-harmony") {
+          output += `🌌 Позаомнітрансцендентна Ультрагармонія: ${element.elements.length} елементів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "absolute-ultraomniharmony") {
+          output += `🌌 Абсолютна Позаультраомнігармонія: ${element.elements.length} елементів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "transabsolute-omnihyperharmony") {
+          output += `🌌 Трансабсолютна Омнінадгармонія: ${element.elements.length} елементів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "transhyperabsolute-harmony") {
+          output += `🌌 Позаабсолютна Транснадгармонія: ${element.elements.length} елементів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "ultraabsolute-transharmony") {
+          output += `🌌 Ультрапозаабсолютна Надтрансгармонія: ${element.elements.length} елементів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "absolute-transultraharmony") {
+          output += `🌌 Абсолютна Трансультрагармонія: ${element.elements.length} елементів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        } else if (element.type === "ultrabsolute-hyperharmony") {
+          output += `🌌 Надабсолютна Ультранадгармонія: ${element.elements.length} елементів<br>`;
+          output += `🔗 Середній резонанс: ${element.resonance.toFixed(1)}%`;
+        }
+        output += `<br>🕒 ${element.timestamp}<br>`;
+        output += `</div>`;
+      });
+      document.getElementById("hyperabsolute-ultraharmony").innerHTML = output;
+    }
+
+    function saveMoment() {
+      if (!ultraharmonyRunning) {
+        alert("Спочатку запусти позаабсолютну надультрагармонію!");
+        return;
+      }
+      const moment = {
+        elements: elements.map(el => ({ type: el.type, name: el.name || el.description || el.singularities?.length || el.elements?.length, resonance: el.resonance })),
+        timestamp: new Date().toISOString()
+      };
+      moments.push(moment);
+      document.getElementById("hyperabsolute-ultraharmony").innerHTML += `<br>📍 Момент збережено: ${moment.timestamp}`;
+    }
+
+    function stopHyperabsoluteUltraharmony() {
+      ultraharmonyRunning = false;
+      document.getElementById("hyperabsolute-ultraharmony").innerHTML += "<br>⏹️ Позаабсолютну надультрагармонію зупинено!";
+    }
+
+    function saveHyperabsoluteUltraharmony() {
+      if (!blobCache) {
+        blobCache = new Blob([JSON.stringify({ elements, moments }, null, 2)], {type: "application/json"});
+      }
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blobCache);
+      a.download = "resonance-hyperabsolute-ultraharmony.json";
+      a.click();
+    }
+
+    function savePng() {
+      const a = document.createElement("a");
+      a.href = ultraharmonyCanvas.toDataURL("image/png");
+      a.download = "resonance-hyperabsolute-ultraharmony.png";
+      a.click();
+    }
+
+    let blobCache = null;
+  </script>
+</body>
+</html>
