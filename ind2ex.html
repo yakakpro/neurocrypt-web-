@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0c0c0c">
-  <title>🌌 Resonance Hub ∞ v12</title>
+  <title>🌌 Resonance Hub ∞ v13</title>
   <style>
     body {
       background: #0c0c0c;
@@ -15,7 +15,7 @@
       margin: auto;
       text-align: center;
       position: relative;
-      overflow: hidden;
+      overflow-x: hidden; /* Виправлено для нормального скролингу */
     }
     #matrix {
       position: fixed;
@@ -127,10 +127,11 @@
 </head>
 <body>
   <canvas id="matrix"></canvas>
-  <h1>🌌 Resonance Hub ∞ v12</h1>
-  <p>Імпульсний нейронний каскад — твори, резонуй, об’єднуй вічність!</p>
+  <h1>🌌 Resonance Hub ∞ v13</h1>
+  <p>Спалаховий нейронний каскад — твори, резонуй, об’єднуй вічність!</p>
 
   <div>
+    <button onclick="scrollToTop()">🔼 Промотати вгору</button>
     <button onclick="scrollToBottom()">🔽 Промотати вниз</button>
     <input type="text" id="harmonyName" placeholder="Назва гармонії">
     <button onclick="generateHarmonyName()">🎲 Згенерувати назву</button>
@@ -178,6 +179,7 @@
     <button onclick="generateFractal()">🌐 Створити фрактал</button>
     <button onclick="generateNeuralLink()">🧠 Створити нейронний зв’язок</button>
     <button onclick="generatePulse()">💥 Запустити імпульс</button>
+    <button onclick="generateFlare()">✨ Запустити спалах</button>
     <select id="fediverse-instance">
       <option value="mastodon.social">mastodon.social</option>
       <option value="pleroma.instance">pleroma.instance</option>
@@ -223,9 +225,12 @@
     }
     setInterval(drawMatrix, 50);
 
-    // Scroll to bottom
+    // Scroll functions
     function scrollToBottom() {
       window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+    function scrollToTop() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     // 3D Visualization
@@ -242,8 +247,9 @@
     let rotation = 0;
     let pulsePhase = 0;
     let impulsePhase = 0;
-    const sphereGeo = new THREE.SphereGeometry(13.8, 16, 16);
-    const coreGeo = new THREE.SphereGeometry(72, 64, 64);
+    let flarePhase = 0;
+    const sphereGeo = new THREE.SphereGeometry(14, 16, 16);
+    const coreGeo = new THREE.SphereGeometry(74, 64, 64);
     const coreMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.9 });
     const lineMat = new THREE.LineBasicMaterial({ color: 0x00ffff, opacity: 0.3, transparent: true });
 
@@ -261,10 +267,15 @@
       scene.add(core);
       elements.forEach((el, i) => {
         const scale = 1 + 0.2 * Math.sin(pulsePhase + i) + 0.3 * Math.exp(-impulsePhase);
-        const sphere = new THREE.Mesh(sphereGeo, new THREE.MeshBasicMaterial({ color: getColor(el.resonance), transparent: true, opacity: 0.6 }));
+        const flare = flarePhase > 0 ? 1.5 * Math.sin(flarePhase) : 1;
+        const sphere = new THREE.Mesh(sphereGeo, new THREE.MeshBasicMaterial({ 
+          color: getColor(el.resonance), 
+          transparent: true, 
+          opacity: 0.6 * flare 
+        }));
         sphere.scale.set(scale, scale, scale);
         const angle = (i / elements.length) * 2 * Math.PI;
-        const radius = 130 + (el.resonance || 0) / 10;
+        const radius = 132 + (el.resonance || 0) / 10;
         sphere.position.set(radius * Math.cos(angle + rotation), radius * Math.sin(angle + rotation), Math.sin(i) * 5);
         sphere.userData = el;
         scene.add(sphere);
@@ -274,7 +285,7 @@
             if (toEl) {
               const toIndex = elements.indexOf(toEl);
               const toAngle = (toIndex / elements.length) * 2 * Math.PI;
-              const toRadius = 130 + (toEl.resonance || 0) / 10;
+              const toRadius = 132 + (toEl.resonance || 0) / 10;
               const toPos = new THREE.Vector3(toRadius * Math.cos(toAngle + rotation), toRadius * Math.sin(toAngle + rotation), Math.sin(toIndex) * 5);
               const connMat = new THREE.LineBasicMaterial({ color: 0x00ffff, opacity: conn.weight || 0.3, transparent: true });
               scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([sphere.position, toPos]), connMat));
@@ -282,9 +293,10 @@
           }
         });
       });
-      rotation += 0.57;
+      rotation += 0.58;
       pulsePhase += 0.05;
       impulsePhase = Math.max(0, impulsePhase - 0.1);
+      flarePhase = Math.max(0, flarePhase - 0.1);
       renderer.render(scene, camera);
     }
     setInterval(drawHarmony, 16);
@@ -414,6 +426,13 @@
       document.getElementById("output").innerHTML += `<br>💥 Резонансний імпульс запущено!`;
     }
 
+    // Resonance flare
+    function generateFlare() {
+      if (!running) return alert("Спочатку запусти гармонію!");
+      flarePhase = Math.PI;
+      document.getElementById("output").innerHTML += `<br>✨ Резонансний спалах запущено!`;
+    }
+
     // Pattern editor
     function applyPattern() {
       if (!running) return alert("Спочатку запусти гармонію!");
@@ -517,15 +536,18 @@
       const customPost = document.getElementById("fediverse-post").value;
       const schedule = document.getElementById("fediverse-schedule").value;
       const message = customPost || `🌌 Новий момент у Resonance Hub: ${lastMoment.elements.length} елементів резонують на ${lastMoment.elements.reduce((sum, el) => sum + el.resonance, 0).toFixed(1)}%!\n#Resonance #Spark #oQs`;
+      const postId = `post_${new Date().toISOString()}`;
       document.getElementById("fediverse-preview").innerHTML = `<div>Попередній перегляд: ${message}<br>Реакції (заглушка): ${Math.floor(Math.random() * 20)} лайків, ${Math.floor(Math.random() * 10)} репостів, ${Math.floor(Math.random() * 5)} коментарів</div>`;
       try {
         const postData = {
+          id: postId,
           status: message,
           visibility: "public",
           content_type: "text/plain",
-          scheduled_at: schedule || null
+          scheduled_at: schedule || null,
+          timestamp: new Date().toISOString()
         };
-        // Placeholder for Fediverse posting
+        localStorage.setItem(`fediverse_post_${postId}`, JSON.stringify(postData));
         alert(`Публікація в Fediverse (${instance}): ${message}${schedule ? ` (Заплановано на ${schedule})` : ""}`);
       } catch (e) {
         alert("Помилка публікації в Fediverse: " + e.message);
