@@ -82,6 +82,15 @@
       0%, 100% { box-shadow: 0 0 8px #00ffcc; }
       50% { box-shadow: 0 0 20px #ff00ff; }
     }
+    #qrcode canvas {
+      margin-top: 1rem;
+      border: 1px solid #00ffcc;
+      animation: qr-glitch 8s infinite;
+    }
+    @keyframes qr-glitch {
+      0%, 100% { transform: translate(0); }
+      50% { transform: translate(0.1px, -0.1px); }
+    }
     h1 {
       text-transform: uppercase;
       letter-spacing: 5px;
@@ -99,9 +108,11 @@
 
   <div class="section">
     <h2>🔗 ПІДКЛЮЧИТИСЯ</h2>
-    <input id="peerId" placeholder="🔑 ID пірінгу або QR-код" />
+    <input id="peerId" placeholder="🔑 ID пірінгу або QR-код" readonly />
     <button onclick="connectPeer()">З’ЄДНАТИСЯ</button>
     <button onclick="generateQR()">📸 СТВОРИТИ QR</button>
+    <button onclick="saveQRAsPNG()">💾 ЗБЕРЕГТИ QR</button>
+    <div id="qrcode"></div>
   </div>
 
   <div class="section">
@@ -112,6 +123,8 @@
     <button onclick="sendMessage()">НАДІСЛАТИ</button>
   </div>
 
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script>
     // Матричний дощ
     window.onload = () => {
@@ -141,24 +154,36 @@
       setInterval(draw, 35);
     };
 
-    // WebRTC
-    const peer = new RTCPeerConnection();
-    const dataChannel = peer.createDataChannel('chat');
-    dataChannel.onmessage = (e) => {
-      const { msg, emo } = JSON.parse(e.data);
-      displayMessage(msg, emo, 'remote');
-    };
+    // WebRTC через PeerJS
+    const peer = new Peer();
+    let dataChannel;
+
+    peer.on('open', (id) => {
+      console.log('Твій ID пірінгу:', id);
+      document.getElementById('peerId').value = id;
+    });
+
+    peer.on('connection', (conn) => {
+      conn.on('data', (data) => {
+        const { msg, emo } = JSON.parse(data);
+        displayMessage(msg, emo, 'remote');
+      });
+      dataChannel = conn;
+    });
 
     async function connectPeer() {
-      const peerId = document.getElementById('peerId').value;
-      // Заглушка для WebRTC-з’єднання (реальна імплементація потребує сигнального сервера)
-      alert('З’єднання з ' + peerId);
+      const peerId = prompt('Введи ID іншого пірінгу:');
+      if (!peerId) return alert('📭 Введи ID!');
+      dataChannel = peer.connect(peerId);
+      dataChannel.on('open', () => {
+        console.log('З’єднання встановлено!');
+      });
     }
 
     async function sendMessage() {
       const msg = document.getElementById('message').value;
       const emo = document.getElementById('emo').value;
-      if (!msg || !dataChannel.readyState === 'open') return alert('📭 Введи повідомлення та підключись!');
+      if (!msg || !dataChannel) return alert('📭 Введи повідомлення та підключись!');
 
       // Шифрування (аналогічно Нейрошифратору)
       const encrypted = await aesEncrypt(msg, 'neurochat', emo, 'kyber');
@@ -185,7 +210,6 @@
     }
 
     async function aesEncrypt(text, phrase, emo, algo) {
-      // Повторюємо логіку шифрування з Нейрошифратора
       const rawKey = new TextEncoder().encode(phrase + emo).slice(0, 16);
       const iv = crypto.getRandomValues(new Uint8Array(16));
       const cryptoKey = await crypto.subtle.importKey('raw', rawKey, 'AES-CBC', false, ['encrypt']);
@@ -194,8 +218,26 @@
     }
 
     function generateQR() {
-      alert('Генерація QR для пірінгу (заглушка)');
-      // Додати QRCode.toCanvas як у Нейрошифраторі
+      const peerId = document.getElementById('peerId').value;
+      if (!peerId) return alert('📭 Спочатку отримай ID пірінгу!');
+      const qrDiv = document.getElementById('qrcode');
+      qrDiv.innerHTML = '';
+      new QRCode(qrDiv, {
+        text: peerId,
+        width: 256,
+        height: 256,
+        colorDark: '#00ffcc',
+        colorLight: '#0e0e0e',
+      });
+    }
+
+    function saveQRAsPNG() {
+      const qrCanvas = document.querySelector('#qrcode canvas');
+      if (!qrCanvas) return alert('📭 Спочатку створіть QR!');
+      const link = document.createElement('a');
+      link.download = 'peer_qr.png';
+      link.href = qrCanvas.toDataURL('image/png');
+      link.click();
     }
 
     // Реєстрація PWA
