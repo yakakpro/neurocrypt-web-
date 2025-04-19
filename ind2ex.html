@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0c0c0c">
-  <title>🌌 Resonance Hub ∞ v1</title>
+  <title>🌌 Resonance Hub ∞ v2</title>
   <style>
     body {
       background: #0c0c0c;
@@ -52,6 +52,7 @@
     button:hover, input:hover, select:hover {
       background: #333;
       transform: scale(1.05);
+      transition: all 0.3s;
     }
     #output {
       text-align: center;
@@ -70,9 +71,11 @@
       border: 1px solid #444;
       cursor: pointer;
       animation: glitch 8s infinite;
+      transition: all 0.3s;
     }
     .harmony-card:hover {
       background: #333;
+      transform: scale(1.05);
     }
     pre {
       background: #111;
@@ -103,10 +106,11 @@
 </head>
 <body>
   <canvas id="matrix"></canvas>
-  <h1>🌌 Resonance Hub ∞ v1</h1>
-  <p>Центр усіх трансцендентних гармоній — створюй, резонуй, об'єднуй!</p>
+  <h1>🌌 Resonance Hub ∞ v2</h1>
+  <p>Твій портал для резонансних гармоній — створюй, резонуй, ділися!</p>
 
   <div>
+    <input type="text" id="harmonyName" placeholder="Назва гармонії">
     <input type="number" id="entropy" placeholder="Ентропія (0-1)" min="0" max="1" step="0.1">
     <input type="number" id="level" placeholder="Рівень (0-10)" min="0" max="10" step="1">
     <select id="fusion">
@@ -114,7 +118,7 @@
       <option value="hyper">Гіпергармонії</option>
       <option value="all">Усе</option>
     </select>
-    <button onclick="startHarmony()">▶️ Запустити нову гармонію</button>
+    <button onclick="startHarmony()">▶️ Створити гармонію</button>
     <button onclick="stopHarmony()">⏹️ Зупинити</button>
     <button onclick="saveMoment()">📍 Зберегти момент</button>
     <button onclick="postToFediverse()">📡 Поділитися в Fediverse</button>
@@ -164,22 +168,26 @@
     let moments = [];
     let running = false;
     let rotation = 0;
+    const sphereGeo = new THREE.SphereGeometry(11.2, 16, 16);
+    const coreGeo = new THREE.SphereGeometry(52, 64, 64);
+
+    function getColor(resonance) {
+      const t = Math.min(Math.max(resonance / 100, 0), 1);
+      const r = Math.round(255 * (1 - t));
+      const g = 0;
+      const b = Math.round(255 * t);
+      return (r << 16) | (g << 8) | b;
+    }
 
     function drawHarmony() {
       if (!running) return;
       scene.children.forEach(child => scene.remove(child));
-      const core = new THREE.Mesh(
-        new THREE.SphereGeometry(50, 64, 64),
-        new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.9 })
-      );
+      const core = new THREE.Mesh(coreGeo, new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.9 }));
       scene.add(core);
       elements.forEach((el, i) => {
-        const sphere = new THREE.Mesh(
-          new THREE.SphereGeometry(11, 16, 16),
-          new THREE.MeshBasicMaterial({ color: el.resonance >= 60 ? 0x00ffff : 0xff00ff, transparent: true, opacity: 0.6 })
-        );
+        const sphere = new THREE.Mesh(sphereGeo, new THREE.MeshBasicMaterial({ color: getColor(el.resonance), transparent: true, opacity: 0.6 }));
         const angle = (i / elements.length) * 2 * Math.PI;
-        const radius = 108 + (el.resonance || 0) / 10;
+        const radius = 110 + (el.resonance || 0) / 10;
         sphere.position.set(radius * Math.cos(angle + rotation), radius * Math.sin(angle + rotation), Math.sin(i) * 5);
         sphere.userData = el;
         scene.add(sphere);
@@ -188,17 +196,14 @@
           new THREE.LineBasicMaterial({ color: 0x00ffff, opacity: 0.3, transparent: true })
         ));
       });
-      rotation += 0.46;
+      rotation += 0.47;
       renderer.render(scene, camera);
     }
     setInterval(drawHarmony, 16);
 
     // Mouse interaction
     canvas.addEventListener('click', (event) => {
-      const mouse = new THREE.Vector2(
-        (event.clientX / canvas.clientWidth) * 2 - 1,
-        -(event.clientY / canvas.clientHeight) * 2 + 1
-      );
+      const mouse = new THREE.Vector2((event.clientX / canvas.clientWidth) * 2 - 1, -(event.clientY / canvas.clientHeight) * 2 + 1);
       const raycaster = new THREE.Raycaster();
       raycaster.setFromCamera(mouse, camera);
       const intersects = raycaster.intersectObjects(scene.children);
@@ -242,8 +247,10 @@
         const entropy = parseFloat(document.getElementById("entropy").value) || 0.5;
         const level = parseInt(document.getElementById("level").value) || 5;
         const fusion = document.getElementById("fusion").value;
+        const name = document.getElementById("harmonyName").value || "CustomHarmony";
         if (entropy < 0 || entropy > 1) return alert("Ентропія: 0-1!");
         if (level < 0 || level > 10) return alert("Рівень: 0-10!");
+        if (!name) return alert("Введи назву гармонії!");
 
         elements = [];
         const sources = [
@@ -266,7 +273,7 @@
           { key: "resonanceOmnicosmicUnity", type: "omnicosmic-unity" },
           { key: "resonanceAbsoluteHyperreality", type: "absolute-hyperreality" },
           { key: "resonanceTranshyperreality", type: "transhyperreality" },
-          { key: "resonanceOmnihyperreality", type: "omnihyperrealitygosmic-unity" },
+          { key: "resonanceOmnihyperreality", type: "omnihyperreality" },
           { key: "resonanceUltrahyperreality", type: "ultrahyperreality" },
           { key: "resonanceAbsoluteUltrareality", type: "absolute-ultrareality" },
           { key: "resonanceTranscendentOmnion", type: "transcendent-omnion" },
@@ -329,14 +336,16 @@
         });
 
         running = true;
-        const harmonyData = { elements, moments, entropy, level, fusion, timestamp: new Date().toISOString() };
+        harmonyList.push({ name, type: fusion });
+        renderHarmonies();
+        const harmonyData = { elements, moments, entropy, level, fusion, name, timestamp: new Date().toISOString() };
         const kyber = new Kyber.Kyber512();
         const { publicKey } = await kyber.keygen();
         const encrypted = await kyber.encrypt(publicKey, JSON.stringify(harmonyData));
         const encryptedStr = btoa(String.fromCharCode(...encrypted));
         const signature = await signData(encryptedStr);
         const finalHarmony = { encrypted: encryptedStr, signature, publicKey: btoa(String.fromCharCode(...publicKey)) };
-        localStorage.setItem("resonanceHarmony", JSON.stringify(finalHarmony));
+        localStorage.setItem(`resonanceHarmony_${name}`, JSON.stringify(finalHarmony));
 
         displayElements(elements);
         document.getElementById("data").textContent = JSON.stringify(finalHarmony, null, 2);
@@ -344,12 +353,12 @@
         document.getElementById("saveData").style.display = "inline-block";
         document.getElementById("savePng").style.display = "inline-block";
       } catch (e) {
-        alert("Помилка запуску гармонії: " + e.message);
+        alert("Помилка створення гармонії: " + e.message);
       }
     }
 
     async function loadHarmony(name) {
-      const harmonyData = localStorage.getItem("resonanceHarmony");
+      const harmonyData = localStorage.getItem(`resonanceHarmony_${name}`);
       if (!harmonyData) return alert(`Гармонія ${name} не знайдена!`);
       try {
         const parsed = JSON.parse(harmonyData);
