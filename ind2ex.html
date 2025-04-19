@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0c0c0c">
-  <title>🌌 Resonance Hub ∞ v4</title>
+  <title>🌌 Resonance Hub ∞ v5</title>
   <style>
     body {
       background: #0c0c0c;
@@ -81,13 +81,6 @@
       background: #333;
       transform: scale(1.05);
     }
-    #harmony-map {
-      width: 400px;
-      height: 200px;
-      margin: 20px auto;
-      border: 1px solid #555;
-      background: #000;
-    }
     pre {
       background: #111;
       padding: 10px;
@@ -117,8 +110,8 @@
 </head>
 <body>
   <canvas id="matrix"></canvas>
-  <h1>🌌 Resonance Hub ∞ v4</h1>
-  <p>Твій портал для резонансних гармоній — твори, резонуй, з'єднуй!</p>
+  <h1>🌌 Resonance Hub ∞ v5</h1>
+  <p>Пульс резонансних гармоній — твори, резонуй, з’єднуй космос!</p>
 
   <div>
     <input type="text" id="harmonyName" placeholder="Назва гармонії">
@@ -134,10 +127,10 @@
     <button onclick="startHarmony()">▶️ Створити гармонію</button>
     <button onclick="stopHarmony()">⏹️ Зупинити</button>
     <button onclick="saveMoment()">📍 Зберегти момент</button>
-    <button onclick="generateEvent()">⚡ Створити подію</button>
+    <button onclick="generateWave()">🌊 Створити хвилю</button>
     <button onclick="postToFediverse()">📡 Поділитися в Fediverse</button>
   </div>
-  <canvas id="harmony-map" width="400" height="200"></canvas>
+  <canvas id="harmony-graph" width="400" height="400"></canvas>
   <div id="harmonies"></div>
   <canvas id="viz" width="400" height="400"></canvas>
   <div id="output"></div>
@@ -173,18 +166,18 @@
     setInterval(drawMatrix, 50);
 
     // 3D Visualization
-    const canvas = document.getElementById("viz");
+    const vizCanvas = document.getElementById("viz");
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, canvas.width / canvas.height, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ canvas });
-    renderer.setSize(canvas.width, canvas.height);
+    const camera = new THREE.PerspectiveCamera(75, vizCanvas.width / vizCanvas.height, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ canvas: vizCanvas });
+    renderer.setSize(vizCanvas.width, vizCanvas.height);
     camera.position.z = 50;
     let elements = [];
     let moments = [];
     let running = false;
     let rotation = 0;
-    const sphereGeo = new THREE.SphereGeometry(11.8, 16, 16);
-    const coreGeo = new THREE.SphereGeometry(56, 64, 64);
+    const sphereGeo = new THREE.SphereGeometry(12, 16, 16);
+    const coreGeo = new THREE.SphereGeometry(58, 64, 64);
     const coreMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.9 });
     const lineMat = new THREE.LineBasicMaterial({ color: 0x00ffff, opacity: 0.3, transparent: true });
 
@@ -203,20 +196,20 @@
       elements.forEach((el, i) => {
         const sphere = new THREE.Mesh(sphereGeo, new THREE.MeshBasicMaterial({ color: getColor(el.resonance), transparent: true, opacity: 0.6 }));
         const angle = (i / elements.length) * 2 * Math.PI;
-        const radius = 114 + (el.resonance || 0) / 10;
+        const radius = 116 + (el.resonance || 0) / 10;
         sphere.position.set(radius * Math.cos(angle + rotation), radius * Math.sin(angle + rotation), Math.sin(i) * 5);
         sphere.userData = el;
         scene.add(sphere);
         scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([sphere.position, core.position]), lineMat));
       });
-      rotation += 0.49;
+      rotation += 0.5;
       renderer.render(scene, camera);
     }
     setInterval(drawHarmony, 16);
 
     // Mouse interaction
-    canvas.addEventListener('click', (event) => {
-      const mouse = new THREE.Vector2((event.clientX / canvas.clientWidth) * 2 - 1, -(event.clientY / canvas.clientHeight) * 2 + 1);
+    vizCanvas.addEventListener('click', (event) => {
+      const mouse = new THREE.Vector2((event.clientX / vizCanvas.clientWidth) * 2 - 1, -(event.clientY / vizCanvas.clientHeight) * 2 + 1);
       const raycaster = new THREE.Raycaster();
       raycaster.setFromCamera(mouse, camera);
       const intersects = raycaster.intersectObjects(scene.children);
@@ -233,35 +226,40 @@
       }
     });
 
-    // Harmony map
-    const mapCanvas = document.getElementById("harmony-map");
-    const mapCtx = mapCanvas.getContext("2d");
-    function drawHarmonyMap() {
-      mapCtx.fillStyle = "#000";
-      mapCtx.fillRect(0, 0, mapCanvas.width, mapCanvas.height);
-      mapCtx.fillStyle = "#0ff";
-      mapCtx.font = "12px monospace";
+    // 3D Harmony graph
+    const graphCanvas = document.getElementById("harmony-graph");
+    const graphScene = new THREE.Scene();
+    const graphCamera = new THREE.PerspectiveCamera(75, graphCanvas.width / graphCanvas.height, 0.1, 1000);
+    const graphRenderer = new THREE.WebGLRenderer({ canvas: graphCanvas });
+    graphRenderer.setSize(graphCanvas.width, graphCanvas.height);
+    graphCamera.position.z = 100;
+    const graphSphereGeo = new THREE.SphereGeometry(5, 8, 8);
+    const graphLineMat = new THREE.LineBasicMaterial({ color: 0x00ffff, opacity: 0.5, transparent: true });
+    let graphRotation = 0;
+
+    function drawHarmonyGraph() {
+      graphScene.children.forEach(child => graphScene.remove(child));
       harmonyList.forEach((h, i) => {
-        const x = (i % 5) * 80 + 40;
-        const y = Math.floor(i / 5) * 80 + 40;
-        mapCtx.beginPath();
-        mapCtx.arc(x, y, 10, 0, 2 * Math.PI);
-        mapCtx.fill();
-        mapCtx.fillText(h.name.slice(0, 8), x - 20, y + 20);
+        const sphere = new THREE.Mesh(graphSphereGeo, new THREE.MeshBasicMaterial({ color: h.type === "ultra" ? 0x00ffff : 0xff00ff, transparent: true, opacity: 0.8 }));
+        const angle = (i / harmonyList.length) * 2 * Math.PI;
+        sphere.position.set(50 * Math.cos(angle), 50 * Math.sin(angle), Math.sin(i) * 10);
+        sphere.userData = { name: h.name };
+        graphScene.add(sphere);
         harmonyList.forEach((h2, j) => {
           if (i < j && h.type === h2.type) {
-            const x2 = (j % 5) * 80 + 40;
-            const y2 = Math.floor(j / 5) * 80 + 40;
-            mapCtx.strokeStyle = "#0ff";
-            mapCtx.beginPath();
-            mapCtx.moveTo(x, y);
-            mapCtx.lineTo(x2, y2);
-            mapCtx.stroke();
+            const angle2 = (j / harmonyList.length) * 2 * Math.PI;
+            const pos2 = new THREE.Vector3(50 * Math.cos(angle2), 50 * Math.sin(angle2), Math.sin(j) * 10);
+            graphScene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([sphere.position, pos2]), graphLineMat));
           }
         });
       });
+      graphRotation += 0.02;
+      graphCamera.position.x = 100 * Math.sin(graphRotation);
+      graphCamera.position.z = 100 * Math.cos(graphRotation);
+      graphCamera.lookAt(0, 0, 0);
+      graphRenderer.render(graphScene, graphCamera);
     }
-    setInterval(drawHarmonyMap, 100);
+    setInterval(drawHarmonyGraph, 16);
 
     // Harmony gallery
     const harmonyList = [
@@ -273,7 +271,6 @@
     ];
     function renderHarmonies() {
       document.getElementById("harmonies").innerHTML = harmonyList.map(h => `<div class="harmony-card" onclick="loadHarmony('${h.name}')">${h.name}</div>`).join("");
-      drawHarmonyMap();
     }
     renderHarmonies();
 
@@ -295,14 +292,16 @@
       displayElements(elements);
     }
 
-    // Event generation
-    function generateEvent() {
+    // Resonance wave
+    let wavePhase = 0;
+    function generateWave() {
       if (!running) return alert("Спочатку запусти гармонію!");
+      wavePhase += 0.1;
       elements.forEach(el => {
-        if (Math.random() > 0.5) el.resonance = Math.min(100, Math.max(0, el.resonance + (Math.random() * 20 - 10)));
+        el.resonance = Math.min(100, Math.max(0, el.resonance + 10 * Math.sin(wavePhase)));
       });
       displayElements(elements);
-      document.getElementById("output").innerHTML += `<br>⚡ Резонансна подія створена!`;
+      document.getElementById("output").innerHTML += `<br>🌊 Резонансна хвиля запущена!`;
     }
 
     async function verifySignature(data, signature) {
@@ -483,14 +482,27 @@
           visibility: "public",
           content_type: "text/plain"
         };
-        // Example Mastodon API request
+        // Example OAuth flow for Mastodon/Pleroma
         /*
-        const response = await fetch("https://mastodon.instance/api/v1/statuses", {
+        const instance = "https://mastodon.instance";
+        const oauthUrl = `${instance}/oauth/authorize?client_id=YOUR_CLIENT_ID&redirect_uri=urn:ietf:wg:oauth:2.0:oob&response_type=code&scope=write:statuses`;
+        const tokenResponse = await fetch(`${instance}/oauth/token`, {
           method: "POST",
-          headers: { "Authorization": "Bearer YOUR_TOKEN", "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            client_id: "YOUR_CLIENT_ID",
+            client_secret: "YOUR_CLIENT_SECRET",
+            grant_type: "authorization_code",
+            code: "AUTH_CODE",
+            redirect_uri: "urn:ietf:wg:oauth:2.0:oob"
+          })
+        });
+        const { access_token } = await tokenResponse.json();
+        await fetch(`${instance}/api/v1/statuses`, {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${access_token}`, "Content-Type": "application/json" },
           body: JSON.stringify(postData)
         });
-        if (response.ok) alert("Опубліковано в Fediverse!");
         */
         alert("Публікація в Fediverse: " + message);
       } catch (e) {
@@ -509,7 +521,7 @@
 
     function savePng() {
       const a = document.createElement("a");
-      a.href = canvas.toDataURL("image/png");
+      a.href = vizCanvas.toDataURL("image/png");
       a.download = "resonance-hub.png";
       a.click();
     }
