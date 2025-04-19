@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0c0c0c">
-  <title>🌌 Resonance Hub ∞ v6</title>
+  <title>🌌 Resonance Hub ∞ v7</title>
   <style>
     body {
       background: #0c0c0c;
@@ -54,9 +54,26 @@
       transform: scale(1.05);
       transition: all 0.3s;
     }
-    #resonance-slider, #element-editor {
+    #resonance-slider, #element-editor, #timeline {
       width: 80%;
       margin: 15px auto;
+    }
+    #timeline {
+      display: flex;
+      overflow-x: auto;
+      gap: 10px;
+    }
+    .timeline-item {
+      background: #1a1a1a;
+      padding: 10px;
+      border: 1px solid #444;
+      cursor: pointer;
+      animation: glitch 8s infinite;
+      transition: all 0.3s;
+    }
+    .timeline-item:hover {
+      background: #333;
+      transform: scale(1.05);
     }
     #output {
       text-align: center;
@@ -110,8 +127,8 @@
 </head>
 <body>
   <canvas id="matrix"></canvas>
-  <h1>🌌 Resonance Hub ∞ v6</h1>
-  <p>Серце резонансних гармоній — твори, пульсуй, з’єднуй космос!</p>
+  <h1>🌌 Resonance Hub ∞ v7</h1>
+  <p>Епіцентр резонансних гармоній — твори, пульсуй, об’єднуй всесвіт!</p>
 
   <div>
     <input type="text" id="harmonyName" placeholder="Назва гармонії">
@@ -137,13 +154,14 @@
     <button onclick="startHarmony()">▶️ Створити гармонію</button>
     <button onclick="stopHarmony()">⏹️ Зупинити</button>
     <button onclick="saveMoment()">📍 Зберегти момент</button>
-    <button onclick="generatePulse()">🌌 Запустити пульсацію</button>
+    <button onclick="generateSingularity()">🌑 Створити сингулярність</button>
     <select id="fediverse-instance">
       <option value="mastodon.social">mastodon.social</option>
       <option value="pleroma.instance">pleroma.instance</option>
     </select>
     <button onclick="postToFediverse()">📡 Поділитися в Fediverse</button>
   </div>
+  <div id="timeline"></div>
   <canvas id="harmony-graph" width="400" height="400"></canvas>
   <div id="harmonies"></div>
   <canvas id="viz" width="400" height="400"></canvas>
@@ -191,8 +209,8 @@
     let running = false;
     let rotation = 0;
     let pulsePhase = 0;
-    const sphereGeo = new THREE.SphereGeometry(12.2, 16, 16);
-    const coreGeo = new THREE.SphereGeometry(60, 64, 64);
+    const sphereGeo = new THREE.SphereGeometry(12.5, 16, 16);
+    const coreGeo = new THREE.SphereGeometry(62, 64, 64);
     const coreMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.9 });
     const lineMat = new THREE.LineBasicMaterial({ color: 0x00ffff, opacity: 0.3, transparent: true });
 
@@ -213,13 +231,13 @@
         const sphere = new THREE.Mesh(sphereGeo, new THREE.MeshBasicMaterial({ color: getColor(el.resonance), transparent: true, opacity: 0.6 }));
         sphere.scale.set(scale, scale, scale);
         const angle = (i / elements.length) * 2 * Math.PI;
-        const radius = 118 + (el.resonance || 0) / 10;
+        const radius = 120 + (el.resonance || 0) / 10;
         sphere.position.set(radius * Math.cos(angle + rotation), radius * Math.sin(angle + rotation), Math.sin(i) * 5);
         sphere.userData = el;
         scene.add(sphere);
         scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([sphere.position, core.position]), lineMat));
       });
-      rotation += 0.51;
+      rotation += 0.52;
       pulsePhase += 0.05;
       renderer.render(scene, camera);
     }
@@ -238,6 +256,7 @@
                   el.type === "network" ? `🌐 Мережа: ${el.nodes.length} вузлів<br>🔗 Резонанс: ${el.resonance.toFixed(1)}%` :
                   el.type === "rule" ? `📏 Правило: ${el.ruleType}<br>🔗 Поріг: ${el.threshold}%` :
                   el.type === "cosmos" ? `🌠 Космос: ${el.singularities.length} сингулярів<br>🔗 Резонанс: ${el.resonance.toFixed(1)}%` :
+                  el.type === "singularity" ? `🌑 Сингулярність: ${el.elements.length} елементів<br>🔗 Резонанс: ${el.resonance.toFixed(1)}%` :
                   `🌌 ${el.type}: ${el.elements?.length || 0} елементів<br>🔗 Резонанс: ${el.resonance.toFixed(1)}%`;
         output += `<br>🕒 ${el.timestamp}`;
         document.getElementById("output").innerHTML += output;
@@ -279,6 +298,13 @@
     }
     setInterval(drawHarmonyGraph, 16);
 
+    // Timeline
+    let timelineItems = [];
+    function renderTimeline() {
+      const timeline = document.getElementById("timeline");
+      timeline.innerHTML = timelineItems.map((item, i) => `<div class="timeline-item" onclick="loadHarmony('${item.name}')">${item.name}<br>${item.timestamp}</div>`).join("");
+    }
+
     // Harmony gallery
     const harmonyList = [
       { name: "Transultrahyper", type: "hyper" },
@@ -289,6 +315,7 @@
     ];
     function renderHarmonies() {
       document.getElementById("harmonies").innerHTML = harmonyList.map(h => `<div class="harmony-card" onclick="loadHarmony('${h.name}')">${h.name}</div>`).join("");
+      renderTimeline();
     }
     renderHarmonies();
 
@@ -310,11 +337,19 @@
       displayElements(elements);
     }
 
-    // Resonance pulse
-    function generatePulse() {
-      if (!running) return alert("Спочатку запусти гармонію!");
-      pulsePhase = 0;
-      document.getElementById("output").innerHTML += `<br>🌌 Резонансна пульсація запущена!`;
+    // Resonance singularity
+    function generateSingularity() {
+      if (!running || elements.length < 2) return alert("Потрібно щонайменше 2 елементи для сингулярності!");
+      const singularity = {
+        type: "singularity",
+        name: `Singularity_${new Date().toISOString()}`,
+        elements: elements.slice(0, 2),
+        resonance: elements.slice(0, 2).reduce((sum, el) => sum + el.resonance, 0) * 1.5,
+        timestamp: new Date().toISOString()
+      };
+      elements = [singularity, ...elements.slice(2)];
+      displayElements(elements);
+      document.getElementById("output").innerHTML += `<br>🌑 Сингулярність створено: ${singularity.name}`;
     }
 
     // Element editor
@@ -435,6 +470,7 @@
 
         running = true;
         harmonyList.push({ name, type: fusion });
+        timelineItems.push({ name, timestamp: new Date().toISOString() });
         renderHarmonies();
         const harmonyData = { elements, moments, entropy, level, fusion, name, timestamp: new Date().toISOString() };
         const kyber = new Kyber.Kyber512();
@@ -481,6 +517,7 @@
                   el.type === "network" ? `🌐 Мережа: ${el.nodes.length} вузлів<br>🔗 Резонанс: ${el.resonance.toFixed(1)}%` :
                   el.type === "rule" ? `📏 Правило: ${el.ruleType}<br>🔗 Поріг: ${el.threshold}%` :
                   el.type === "cosmos" ? `🌠 Космос: ${el.singularities.length} сингулярів<br>🔗 Резонанс: ${el.resonance.toFixed(1)}%` :
+                  el.type === "singularity" ? `🌑 Сингулярність: ${el.elements.length} елементів<br>🔗 Резонанс: ${el.resonance.toFixed(1)}%` :
                   `🌌 ${el.type}: ${el.elements?.length || 0} елементів<br>🔗 Резонанс: ${el.resonance.toFixed(1)}%`;
         output += `<br>🕒 ${el.timestamp}</div>`;
       });
@@ -491,6 +528,8 @@
       if (!running) return alert("Спочатку запусти гармонію!");
       const moment = { elements: elements.map(el => ({ type: el.type, name: el.name || el.description || el.singularities?.length || el.elements?.length, resonance: el.resonance })), timestamp: new Date().toISOString() };
       moments.push(moment);
+      timelineItems.push({ name: `Moment_${moment.timestamp}`, timestamp: moment.timestamp });
+      renderTimeline();
       document.getElementById("output").innerHTML += `<br>📍 Момент збережено: ${moment.timestamp}`;
     }
 
@@ -540,7 +579,7 @@
 
     let blobCache = null;
     function saveHarmony() {
-      if (!blobCache) blobCache = new Blob([JSON.stringify({ elements, moments }, null, 2)], { type: "application/json" });
+      if (!blobCache) blobCache = new Blob([JSON.stringify({ elements, moments, timeline: timelineItems }, null, 2)], { type: "application/json" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blobCache);
       a.download = "resonance-hub.json";
