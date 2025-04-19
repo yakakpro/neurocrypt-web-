@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0c0c0c">
-  <title>🌌 Resonance Hub ∞ v14</title>
+  <title>🌌 Resonance Hub ∞ v15</title>
   <style>
     body {
       background: #0c0c0c;
@@ -64,14 +64,14 @@
       font-size: 0.8em;
       border: 2px solid #0ff;
       background: #0c0c0c;
-      animation: glitch 8s infinite;
+      animation: glitch 8s infinite, neon-pulse 2s infinite;
     }
     #scroll-buttons {
       display: flex;
       justify-content: center;
       gap: 10px;
     }
-    #resonance-slider, #element-editor, #timeline, #node-editor, #pattern-editor, #fediverse-preview {
+    #resonance-slider, #element-editor, #timeline, #node-editor, #pattern-editor, #animation-editor, #fediverse-preview {
       width: 80%;
       margin: 15px auto;
     }
@@ -140,12 +140,17 @@
       50% { filter: brightness(1.5); }
       100% { filter: brightness(1); }
     }
+    @keyframes neon-pulse {
+      0% { box-shadow: 0 0 5px #0ff; }
+      50% { box-shadow: 0 0 10px #0ff; }
+      100% { box-shadow: 0 0 5px #0ff; }
+    }
   </style>
 </head>
 <body>
   <canvas id="matrix"></canvas>
-  <h1>🌌 Resonance Hub ∞ v14</h1>
-  <p>Пульсуючий спалаховий каскад — твори, резонуй, об’єднуй вічність!</p>
+  <h1>🌌 Resonance Hub ∞ v15</h1>
+  <p>Голографічний пульсуючий каскад — твори, резонуй, об’єднуй вічність!</p>
 
   <div id="scroll-buttons">
     <button class="scroll-button" onclick="scrollToTop()">🔼</button>
@@ -191,6 +196,15 @@
       <input type="number" id="patternAmplitude" placeholder="Амплітуда (0-10)" min="0" max="10" step="1">
       <button onclick="applyPattern()">🎨 Застосувати патерн</button>
     </div>
+    <div id="animation-editor">
+      <select id="animationType">
+        <option value="rotate">Обертання</option>
+        <option value="scale">Масштабування</option>
+        <option value="color">Зміна кольору</option>
+      </select>
+      <input type="number" id="animationSpeed" placeholder="Швидкість (0-10)" min="0" max="10" step="1">
+      <button onclick="applyAnimation()">🎬 Застосувати анімацію</button>
+    </div>
     <button onclick="startHarmony()">▶️ Створити гармонію</button>
     <button onclick="stopHarmony()">⏹️ Зупинити</button>
     <button onclick="saveMoment()">📍 Зберегти момент</button>
@@ -199,6 +213,8 @@
     <button onclick="generateNeuralLink()">🧠 Створити нейронний зв’язок</button>
     <button onclick="generatePulse()">💥 Запустити імпульс</button>
     <button onclick="generateFlare()">✨ Запустити спалах</button>
+    <button onclick="generateHologram()">🌠 Запустити голограму</button>
+    <button onclick="generateLinePulse()">🌌 Пульсація ліній</button>
     <button onclick="showPostHistory()">📜 Історія постів</button>
     <select id="fediverse-instance">
       <option value="mastodon.social">mastodon.social</option>
@@ -263,14 +279,16 @@
     let elements = [];
     let moments = [];
     let connections = [];
+    let animations = [];
     let running = false;
     let rotation = 0;
     let pulsePhase = 0;
     let impulsePhase = 0;
     let flarePhase = 0;
+    let hologramPhase = 0;
     let linePulsePhase = 0;
-    const sphereGeo = new THREE.SphereGeometry(14.2, 16, 16);
-    const coreGeo = new THREE.SphereGeometry(76, 64, 64);
+    const sphereGeo = new THREE.SphereGeometry(14.5, 16, 16);
+    const coreGeo = new THREE.SphereGeometry(78, 64, 64);
     const coreMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.9 });
     const lineMat = new THREE.LineBasicMaterial({ color: 0x00ffff, opacity: 0.3, transparent: true });
 
@@ -289,15 +307,28 @@
       elements.forEach((el, i) => {
         const scale = 1 + 0.2 * Math.sin(pulsePhase + i) + 0.3 * Math.exp(-impulsePhase);
         const flare = flarePhase > 0 ? 1.5 * Math.sin(flarePhase) : 1;
+        const hologram = hologramPhase > 0 ? 0.5 * Math.sin(hologramPhase) : 0;
         const sphere = new THREE.Mesh(sphereGeo, new THREE.MeshBasicMaterial({ 
           color: getColor(el.resonance), 
           transparent: true, 
-          opacity: 0.6 * flare 
+          opacity: 0.6 * flare + hologram 
         }));
-        sphere.scale.set(scale, scale, scale);
+        let animScale = scale;
+        let animRotation = rotation;
+        let animColor = getColor(el.resonance);
+        animations.forEach(anim => {
+          if (anim.type === "scale") {
+            animScale *= 1 + 0.2 * Math.sin(anim.speed * pulsePhase);
+          } else if (anim.type === "rotate") {
+            animRotation += anim.speed * pulsePhase;
+          } else if (anim.type === "color") {
+            animColor = (Math.sin(anim.speed * pulsePhase) > 0 ? 0x00ffff : 0xff00ff);
+          }
+        });
+        sphere.scale.set(animScale, animScale, animScale);
         const angle = (i / elements.length) * 2 * Math.PI;
-        const radius = 134 + (el.resonance || 0) / 10;
-        sphere.position.set(radius * Math.cos(angle + rotation), radius * Math.sin(angle + rotation), Math.sin(i) * 5);
+        const radius = 136 + (el.resonance || 0) / 10;
+        sphere.position.set(radius * Math.cos(angle + animRotation), radius * Math.sin(angle + animRotation), Math.sin(i) * 5);
         sphere.userData = el;
         scene.add(sphere);
         connections.forEach(conn => {
@@ -306,8 +337,8 @@
             if (toEl) {
               const toIndex = elements.indexOf(toEl);
               const toAngle = (toIndex / elements.length) * 2 * Math.PI;
-              const toRadius = 134 + (toEl.resonance || 0) / 10;
-              const toPos = new THREE.Vector3(toRadius * Math.cos(toAngle + rotation), toRadius * Math.sin(toAngle + rotation), Math.sin(toIndex) * 5);
+              const toRadius = 136 + (toEl.resonance || 0) / 10;
+              const toPos = new THREE.Vector3(toRadius * Math.cos(toAngle + animRotation), toRadius * Math.sin(toAngle + animRotation), Math.sin(toIndex) * 5);
               const lineOpacity = (conn.weight || 0.3) * (1 + 0.2 * Math.sin(linePulsePhase));
               const connMat = new THREE.LineBasicMaterial({ color: 0x00ffff, opacity: lineOpacity, transparent: true });
               scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([sphere.position, toPos]), connMat));
@@ -315,10 +346,11 @@
           }
         });
       });
-      rotation += 0.59;
+      rotation += 0.6;
       pulsePhase += 0.05;
       impulsePhase = Math.max(0, impulsePhase - 0.1);
       flarePhase = Math.max(0, flarePhase - 0.1);
+      hologramPhase = Math.max(0, hologramPhase - 0.1);
       linePulsePhase += 0.1;
       renderer.render(scene, camera);
     }
@@ -361,13 +393,13 @@
       harmonyList.forEach((h, i) => {
         const sphere = new THREE.Mesh(graphSphereGeo, new THREE.MeshBasicMaterial({ color: h.type === "ultra" ? 0x00ffff : 0xff00ff, transparent: true, opacity: 0.8 }));
         const angle = (i / harmonyList.length) * 2 * Math.PI;
-        sphere.position.set(50 * Math.cos(angle), 50 * Math.sin(angle), Math.sin(i) * 10);
+        sphere.position.set(50 * Math.cos(angle), 50 * Math.sin(angle), Math.sin(i) * 5);
         sphere.userData = { name: h.name };
         graphScene.add(sphere);
         harmonyList.forEach((h2, j) => {
           if (i < j && h.type === h2.type) {
             const angle2 = (j / harmonyList.length) * 2 * Math.PI;
-            const pos2 = new THREE.Vector3(50 * Math.cos(angle2), 50 * Math.sin(angle2), Math.sin(j) * 10);
+            const pos2 = new THREE.Vector3(50 * Math.cos(angle2), 50 * Math.sin(angle2), Math.sin(j) * 5);
             graphScene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([sphere.position, pos2]), graphLineMat));
           }
         });
@@ -456,11 +488,29 @@
       document.getElementById("output").innerHTML += `<br>✨ Резонансний спалах запущено!`;
     }
 
+    // Resonance hologram
+    function generateHologram() {
+      if (!running) return alert("Спочатку запусти гармонію!");
+      hologramPhase = Math.PI;
+      document.getElementById("output").innerHTML += `<br>🌠 Резонансна голограма запущена!`;
+    }
+
     // Resonance line pulse
     function generateLinePulse() {
       if (!running || connections.length < 1) return alert("Потрібно щонайменше 1 зв’язок для пульсації ліній!");
       linePulsePhase = 0;
       document.getElementById("output").innerHTML += `<br>🌌 Пульсація ліній запущена!`;
+    }
+
+    // Animation editor
+    function applyAnimation() {
+      if (!running) return alert("Спочатку запусти гармонію!");
+      const animType = document.getElementById("animationType").value;
+      const speed = parseFloat(document.getElementById("animationSpeed").value) || 1;
+      if (speed < 0 || speed > 10) return alert("Швидкість: 0-10!");
+      animations.push({ type: animType, speed });
+      localStorage.setItem("resonance_animations", JSON.stringify(animations));
+      document.getElementById("output").innerHTML += `<br>🎬 Анімація застосована: ${animType}`;
     }
 
     // Pattern editor
@@ -572,172 +622,6 @@
       return btoa(String.fromCharCode(...new TextEncoder().encode(data))).slice(0, 32);
     }
 
-    async function startHarmony() {
-      try {
-        const entropy = parseFloat(document.getElementById("entropy").value) || 0.5;
-        const level = parseInt(document.getElementById("level").value) || 5;
-        const fusion = document.getElementById("fusion").value;
-        const name = document.getElementById("harmonyName").value || "CustomHarmony";
-        if (entropy < 0 || entropy > 1) return alert("Ентропія: 0-1!");
-        if (level < 0 || level > 10) return alert("Рівень: 0-10!");
-        if (!name) return alert("Введи назву гармонії!");
-
-        elements = [];
-        const sources = [
-          { key: "resoglyph", type: "glyph" },
-          { key: "resonanceConstructor", type: "network" },
-          { key: "resonanceArchitect", type: "rule" },
-          { key: "resonanceCosmos", type: "cosmos" },
-          { key: "resonanceAbsolute", type: "absolute" },
-          { key: "resonanceInfinity", type: "infinity" },
-          { key: "resonanceTranscendence", type: "transcendence" },
-          { key: "resonanceOmnireality", type: "omnireality" },
-          { key: "resonanceUniversalia", type: "universalia" },
-          { key: "resonanceTotalia", type: "totalia" },
-          { key: "resonanceUltimateUnity", type: "ultimate-unity" },
-          { key: "resonanceOversoul", type: "oversoul" },
-          { key: "resonanceOmnion", type: "omnion" },
-          { key: "resonanceAbsoluteOmnion", type: "absolute-omnion" },
-          { key: "resonanceTransdimensionalUnity", type: "transdimensional-unity" },
-          { key: "resonanceUltradimensionalUnity", type: "ultradimensional-unity" },
-          { key: "resonanceOmnicosmicUnity", type: "omnicosmic-unity" },
-          { key: "resonanceAbsoluteHyperreality", type: "absolute-hyperreality" },
-          { key: "resonanceTranshyperreality", type: "transhyperreality" },
-          { key: "resonanceOmnihyperreality", type: "omnihyperreality" },
-          { key: "resonanceUltrahyperreality", type: "ultrahyperreality" },
-          { key: "resonanceAbsoluteUltrareality", type: "absolute-ultrareality" },
-          { key: "resonanceTranscendentOmnion", type: "transcendent-omnion" },
-          { key: "resonanceAbsoluteSingularity", type: "absolute-singularity" },
-          { key: "resonanceEternalUnity", type: "eternal-unity" },
-          { key: "resonanceUltraeternalHarmony", type: "ultraeternal-harmony" },
-          { key: "resonanceAbsoluteCosmoharmony", type: "absolute-cosmoharmony" },
-          { key: "resonanceOmniabsoluteHarmony", type: "omniabsolute-harmony" },
-          { key: "resonanceTransinfiniteMetaharmony", type: "transinfinite-metaharmony" },
-          { key: "resonanceAbsoluteMetaomniharmony", type: "absolute-metaomniharmony" },
-          { key: "resonanceOmniultraTranscendentHarmony", type: "omniultra-transcendent-harmony" },
-          { key: "resonanceAbsoluteUltraomniharmony", type: "absolute-ultraomniharmony" },
-          { key: "resonanceTransabsoluteOmnihyperharmony", type: "transabsolute-omnihyperharmony" },
-          { key: "resonanceTranshyperabsoluteHarmony", type: "transhyperabsolute-harmony" },
-          { key: "resonanceUltraabsoluteTransharmony", type: "ultraabsolute-transharmony" },
-          { key: "resonanceAbsoluteTransultraharmony", type: "absolute-transultraharmony" },
-          { key: "resonanceUltrabsoluteHyperharmony", type: "ultrabsolute-hyperharmony" },
-          { key: "resonanceHyperabsoluteUltraharmony", type: "hyperabsolute-ultraharmony" },
-          { key: "resonanceUltraabsoluteHyperultraharmony", type: "ultraabsolute-hyperultraharmony" },
-          { key: "resonanceTransabsoluteOmnihyperultraharmony", type: "transabsolute-omnihyperultraharmony" },
-          { key: "resonanceOmniabsoluteUltrahyperomniharmony", type: "omniabsolute-ultrahyperomniharmony" },
-          { key: "resonanceUltratransabsoluteOmniultrahyperomniharmony", type: "ultratransabsolute-omniultrahyperomniharmony" },
-          { key: "resonanceHypertransabsoluteOmnihyperultrahyperomniharmony", type: "hypertransabsolute-omnihyperultrahyperomniharmony" },
-          { key: "resonanceUltrahypertransabsoluteOmniultrahyperultrahyperomniharmony", type: "ultrahypertransabsolute-omniultrahyperultrahyperomniharmony" },
-          { key: "resonanceTransultrahypertransabsoluteOmnihyperultrahyperultrahyperomniharmony", type: "transultrahypertransabsolute-omnihyperultrahyperultrahyperomniharmony" },
-          { key: "resonanceUltratransultrahypertransabsoluteOmniultrahyperultrahyperultrahyperomniharmony", type: "ultratransultrahypertransabsolute-omniultrahyperultrahyperultrahyperomniharmony" },
-          { key: "resonanceHyperultratransultrahypertransabsoluteOmnihyperultrahyperultrahyperultrahyperomniharmony", type: "hyperultratransultrahypertransabsolute-omnihyperultrahyperultrahyperultrahyperomniharmony" },
-          { key: "resonanceUltratranshyperultratransultrahypertransabsoluteOmnihyperultrahyperultrahyperultrahyperultrahyperomniharmony", type: "ultratranshyperultratransultrahypertransabsolute-omnihyperultrahyperultrahyperultrahyperultrahyperomniharmony" }
-        ];
-
-        for (const { key, type } of sources) {
-          if (fusion !== "all" && !type.includes(fusion)) continue;
-          const data = localStorage.getItem(key);
-          if (!data) continue;
-          const parsed = JSON.parse(data);
-          const processItem = async (item) => {
-            if (item.encrypted && item.signature && await verifySignature(item.encrypted, item.signature)) {
-              const eventData = JSON.parse(atob(item.encrypted));
-              if (type === "glyph" && eventData.glyph) {
-                elements.push({ type, name: eventData.title || key, glyph: eventData.glyph, resonance: eventData.resonance || 60, timestamp: eventData.timestamp || new Date().toISOString() });
-              } else if (type === "network" && eventData.nodes) {
-                elements.push({ type, name: key, nodes: eventData.nodes, resonance: eventData.nodes.reduce((sum, node) => sum + (node.resonance || 60), 0) / eventData.nodes.length, timestamp: eventData.timestamp || new Date().toISOString() });
-              } else if (type === "rule" && eventData.nodes) {
-                elements.push({ type, description: eventData.description, ruleType: eventData.ruleType, threshold: eventData.threshold, entropy: eventData.entropy, resonance: eventData.nodes.reduce((sum, node) => sum + (node.resonance || 60), 0) / eventData.nodes.length, timestamp: eventData.timestamp || new Date().toISOString() });
-              } else if (type === "cosmos" && eventData.singularities) {
-                elements.push({ type, singularities: eventData.singularities, resonance: eventData.singularities.reduce((sum, s) => sum + (s.elements.reduce((esum, e) => esum + (e.resonance || 60), 0) / s.elements.length), 0) / eventData.singularities.length, timestamp: eventData.timestamp || new Date().toISOString() });
-              } else if (eventData.elements) {
-                elements.push({ type, elements: eventData.elements, resonance: eventData.elements.reduce((sum, e) => sum + (e.resonance || 60), 0) / eventData.elements.length, timestamp: eventData.timestamp || new Date().toISOString() });
-              }
-            }
-          };
-          if (Array.isArray(parsed)) parsed.forEach(processItem);
-          else await processItem(parsed);
-        }
-
-        if (!elements.length) return alert("Немає елементів для гармонії!");
-        elements.forEach(el => {
-          if (Math.random() < entropy) el.resonance = Math.max(0, Math.min(100, el.resonance + (Math.random() * 20 - 10)));
-          el.resonance = Math.min(100, el.resonance * (1 + level / 10));
-        });
-
-        running = true;
-        harmonyList.push({ name, type: fusion });
-        timelineItems.push({ name, timestamp: new Date().toISOString() });
-        renderHarmonies();
-        const harmonyData = { elements, moments, connections, entropy, level, fusion, name, timestamp: new Date().toISOString() };
-        const kyber = new Kyber.Kyber512();
-        const { publicKey } = await kyber.keygen();
-        const encrypted = await kyber.encrypt(publicKey, JSON.stringify(harmonyData));
-        const encryptedStr = btoa(String.fromCharCode(...encrypted));
-        const signature = await signData(encryptedStr);
-        const finalHarmony = { encrypted: encryptedStr, signature, publicKey: btoa(String.fromCharCode(...publicKey)) };
-        localStorage.setItem(`resonanceHarmony_${name}`, JSON.stringify(finalHarmony));
-
-        displayElements(elements);
-        document.getElementById("data").textContent = JSON.stringify(finalHarmony, null, 2);
-        document.getElementById("data").style.display = "block";
-        document.getElementById("saveData").style.display = "inline-block";
-        document.getElementById("savePng").style.display = "inline-block";
-      } catch (e) {
-        alert("Помилка створення гармонії: " + e.message);
-      }
-    }
-
-    async function loadHarmony(name) {
-      const harmonyData = localStorage.getItem(`resonanceHarmony_${name}`);
-      if (!harmonyData) return alert(`Гармонія ${name} не знайдена!`);
-      try {
-        const parsed = JSON.parse(harmonyData);
-        if (parsed.encrypted && parsed.signature && await verifySignature(parsed.encrypted, parsed.signature)) {
-          const eventData = JSON.parse(atob(parsed.encrypted));
-          elements = eventData.elements;
-          moments = eventData.moments;
-          connections = eventData.connections || [];
-          running = true;
-          displayElements(elements);
-          updateNodeEditor();
-          document.getElementById("output").innerHTML += `<br>🌌 Завантажено гармонію: ${name}`;
-        }
-      } catch (e) {
-        alert(`Помилка завантаження гармонії ${name}: ${e.message}`);
-      }
-    }
-
-    function displayElements(els) {
-      let output = `🌌 Елементів: ${els.length}<br>`;
-      els.forEach((el, i) => {
-        output += `<div>📍 Елемент ${i + 1}: ${el.name || el.description || el.singularities?.length || el.subElements?.length || el.elements?.length || "невідомо"}<br>`;
-        output += el.type === "glyph" ? `🧬 Гліф: ${el.glyph.join(" + ")}<br>🔗 Резонанс: ${el.resonance.toFixed(1)}%` :
-                  el.type === "network" ? `🌐 Мережа: ${el.nodes.length} вузлів<br>🔗 Резонанс: ${el.resonance.toFixed(1)}%` :
-                  el.type === "rule" ? `📏 Правило: ${el.ruleType}<br>🔗 Поріг: ${el.threshold}%` :
-                  el.type === "cosmos" ? `🌠 Космос: ${el.singularities.length} сингулярів<br>🔗 Резонанс: ${el.resonance.toFixed(1)}%` :
-                  el.type === "singularity" ? `🌑 Сингулярність: ${el.elements.length} елементів<br>🔗 Резонанс: ${el.resonance.toFixed(1)}%` :
-                  el.type === "fractal" ? `🌐 Фрактал: ${el.subElements.length} піделементів<br>🔗 Резонанс: ${el.resonance.toFixed(1)}%` :
-                  `🌌 ${el.type}: ${el.elements?.length || 0} елементів<br>🔗 Резонанс: ${el.resonance.toFixed(1)}%`;
-        output += `<br>🕒 ${el.timestamp}</div>`;
-      });
-      document.getElementById("output").innerHTML = output;
-    }
-
-    function saveMoment() {
-      if (!running) return alert("Спочатку запусти гармонію!");
-      const moment = { elements: elements.map(el => ({ type: el.type, name: el.name || el.description || el.singularities?.length || el.subElements?.length || el.elements?.length, resonance: el.resonance })), timestamp: new Date().toISOString() };
-      moments.push(moment);
-      timelineItems.push({ name: `Moment_${moment.timestamp}`, timestamp: moment.timestamp });
-      renderTimeline();
-      document.getElementById("output").innerHTML += `<br>📍 Момент збережено: ${moment.timestamp}`;
-    }
-
-    function stopHarmony() {
-      running = false;
-      document.getElementById("output").innerHTML += "<br>⏹️ Гармонію зупинено!";
-    }
-
     async function postToFediverse() {
       if (!moments.length) return alert("Немає моментів для публікації!");
       const lastMoment = moments[moments.length - 1];
@@ -746,13 +630,15 @@
       const schedule = document.getElementById("fediverse-schedule").value;
       const message = customPost || `🌌 Новий момент у Resonance Hub: ${lastMoment.elements.length} елементів резонують на ${lastMoment.elements.reduce((sum, el) => sum + el.resonance, 0).toFixed(1)}%!\n#Resonance #Spark #oQs`;
       const postId = `post_${new Date().toISOString()}`;
-      document.getElementById("fediverse-preview").innerHTML = `<div>Попередній перегляд: ${message}<br>Реакції (заглушка): ${Math.floor(Math.random() * 20)} лайків, ${Math.floor(Math.random() * 10)} репостів, ${Math.floor(Math.random() * 5)} коментарів</div>`;
+      const image = vizCanvas.toDataURL("image/png");
+      document.getElementById("fediverse-preview").innerHTML = `<div>Попередній перегляд: ${message}<br><img src="${image}" style="max-width: 200px;"><br>Реакції (заглушка): ${Math.floor(Math.random() * 20)} лайків, ${Math.floor(Math.random() * 10)} репостів, ${Math.floor(Math.random() * 5)} коментарів</div>`;
       try {
         const postData = {
           id: postId,
           status: message,
           visibility: "public",
           content_type: "text/plain",
+          image: image,
           scheduled_at: schedule || null,
           timestamp: new Date().toISOString()
         };
@@ -765,7 +651,7 @@
 
     let blobCache = null;
     function saveHarmony() {
-      if (!blobCache) blobCache = new Blob([JSON.stringify({ elements, moments, connections, timeline: timelineItems }, null, 2)], { type: "application/json" });
+      if (!blobCache) blobCache = new Blob([JSON.stringify({ elements, moments, connections, animations, timeline: timelineItems }, null, 2)], { type: "application/json" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blobCache);
       a.download = "resonance-hub.json";
