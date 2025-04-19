@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0c0c0c">
-  <title>🌌 Resonance Hub ∞ v10</title>
+  <title>🌌 Resonance Hub ∞ v12</title>
   <style>
     body {
       background: #0c0c0c;
@@ -54,7 +54,7 @@
       transform: scale(1.05);
       transition: all 0.3s;
     }
-    #resonance-slider, #element-editor, #timeline, #node-editor, #fediverse-preview {
+    #resonance-slider, #element-editor, #timeline, #node-editor, #pattern-editor, #fediverse-preview {
       width: 80%;
       margin: 15px auto;
     }
@@ -127,10 +127,11 @@
 </head>
 <body>
   <canvas id="matrix"></canvas>
-  <h1>🌌 Resonance Hub ∞ v10</h1>
-  <p>Каскадний фрактал гармоній — твори, резонуй, об’єднуй вічність!</p>
+  <h1>🌌 Resonance Hub ∞ v12</h1>
+  <p>Імпульсний нейронний каскад — твори, резонуй, об’єднуй вічність!</p>
 
   <div>
+    <button onclick="scrollToBottom()">🔽 Промотати вниз</button>
     <input type="text" id="harmonyName" placeholder="Назва гармонії">
     <button onclick="generateHarmonyName()">🎲 Згенерувати назву</button>
     <input type="number" id="entropy" placeholder="Ентропія (0-1)" min="0" max="1" step="0.1">
@@ -161,12 +162,22 @@
       <input type="number" id="nodeWeight" placeholder="Вага зв’язку (0-1)" min="0" max="1" step="0.1">
       <button onclick="addNodeConnection()">🔗 Додати зв’язок</button>
     </div>
+    <div id="pattern-editor">
+      <select id="patternType">
+        <option value="sine">Синусоїдальний</option>
+        <option value="exp">Експоненціальний</option>
+        <option value="chaos">Хаотичний</option>
+      </select>
+      <input type="number" id="patternAmplitude" placeholder="Амплітуда (0-10)" min="0" max="10" step="1">
+      <button onclick="applyPattern()">🎨 Застосувати патерн</button>
+    </div>
     <button onclick="startHarmony()">▶️ Створити гармонію</button>
     <button onclick="stopHarmony()">⏹️ Зупинити</button>
     <button onclick="saveMoment()">📍 Зберегти момент</button>
     <button onclick="generateSingularity()">🌑 Створити сингулярність</button>
     <button onclick="generateFractal()">🌐 Створити фрактал</button>
-    <button onclick="generateCascade()">🌊 Запустити каскад</button>
+    <button onclick="generateNeuralLink()">🧠 Створити нейронний зв’язок</button>
+    <button onclick="generatePulse()">💥 Запустити імпульс</button>
     <select id="fediverse-instance">
       <option value="mastodon.social">mastodon.social</option>
       <option value="pleroma.instance">pleroma.instance</option>
@@ -212,6 +223,11 @@
     }
     setInterval(drawMatrix, 50);
 
+    // Scroll to bottom
+    function scrollToBottom() {
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+
     // 3D Visualization
     const vizCanvas = document.getElementById("viz");
     const scene = new THREE.Scene();
@@ -225,8 +241,9 @@
     let running = false;
     let rotation = 0;
     let pulsePhase = 0;
-    const sphereGeo = new THREE.SphereGeometry(13.2, 16, 16);
-    const coreGeo = new THREE.SphereGeometry(68, 64, 64);
+    let impulsePhase = 0;
+    const sphereGeo = new THREE.SphereGeometry(13.8, 16, 16);
+    const coreGeo = new THREE.SphereGeometry(72, 64, 64);
     const coreMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.9 });
     const lineMat = new THREE.LineBasicMaterial({ color: 0x00ffff, opacity: 0.3, transparent: true });
 
@@ -243,11 +260,11 @@
       const core = new THREE.Mesh(coreGeo, coreMat);
       scene.add(core);
       elements.forEach((el, i) => {
-        const scale = 1 + 0.2 * Math.sin(pulsePhase + i);
+        const scale = 1 + 0.2 * Math.sin(pulsePhase + i) + 0.3 * Math.exp(-impulsePhase);
         const sphere = new THREE.Mesh(sphereGeo, new THREE.MeshBasicMaterial({ color: getColor(el.resonance), transparent: true, opacity: 0.6 }));
         sphere.scale.set(scale, scale, scale);
         const angle = (i / elements.length) * 2 * Math.PI;
-        const radius = 126 + (el.resonance || 0) / 10;
+        const radius = 130 + (el.resonance || 0) / 10;
         sphere.position.set(radius * Math.cos(angle + rotation), radius * Math.sin(angle + rotation), Math.sin(i) * 5);
         sphere.userData = el;
         scene.add(sphere);
@@ -257,7 +274,7 @@
             if (toEl) {
               const toIndex = elements.indexOf(toEl);
               const toAngle = (toIndex / elements.length) * 2 * Math.PI;
-              const toRadius = 126 + (toEl.resonance || 0) / 10;
+              const toRadius = 130 + (toEl.resonance || 0) / 10;
               const toPos = new THREE.Vector3(toRadius * Math.cos(toAngle + rotation), toRadius * Math.sin(toAngle + rotation), Math.sin(toIndex) * 5);
               const connMat = new THREE.LineBasicMaterial({ color: 0x00ffff, opacity: conn.weight || 0.3, transparent: true });
               scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([sphere.position, toPos]), connMat));
@@ -265,8 +282,9 @@
           }
         });
       });
-      rotation += 0.55;
+      rotation += 0.57;
       pulsePhase += 0.05;
+      impulsePhase = Math.max(0, impulsePhase - 0.1);
       renderer.render(scene, camera);
     }
     setInterval(drawHarmony, 16);
@@ -385,6 +403,55 @@
       displayElements(elements);
     }
 
+    // Resonance pulse
+    function generatePulse() {
+      if (!running) return alert("Спочатку запусти гармонію!");
+      impulsePhase = 1;
+      elements.forEach(el => {
+        el.resonance = Math.min(100, el.resonance + 20 * Math.exp(-impulsePhase));
+      });
+      displayElements(elements);
+      document.getElementById("output").innerHTML += `<br>💥 Резонансний імпульс запущено!`;
+    }
+
+    // Pattern editor
+    function applyPattern() {
+      if (!running) return alert("Спочатку запусти гармонію!");
+      const patternType = document.getElementById("patternType").value;
+      const amplitude = parseFloat(document.getElementById("patternAmplitude").value) || 5;
+      if (amplitude < 0 || amplitude > 10) return alert("Амплітуда: 0-10!");
+      elements.forEach((el, i) => {
+        if (patternType === "sine") {
+          el.resonance = Math.min(100, Math.max(0, el.resonance + amplitude * Math.sin(i + pulsePhase)));
+        } else if (patternType === "exp") {
+          el.resonance = Math.min(100, Math.max(0, el.resonance * Math.exp(amplitude / 100)));
+        } else if (patternType === "chaos") {
+          el.resonance = Math.min(100, Math.max(0, el.resonance + amplitude * (Math.random() - 0.5)));
+        }
+      });
+      displayElements(elements);
+      document.getElementById("output").innerHTML += `<br>🎨 Патерн застосовано: ${patternType}`;
+    }
+
+    // Resonance neural link
+    function generateNeuralLink() {
+      if (!running || connections.length < 1) return alert("Потрібно щонайменше 1 зв’язок для нейронного зв’язку!");
+      elements.forEach(el => {
+        connections.forEach(conn => {
+          if (conn.from === el.name) {
+            const toEl = elements.find(e => e.name === conn.to);
+            if (toEl) {
+              const interaction = (el.resonance + toEl.resonance) * (conn.weight || 0.5) * 0.1;
+              el.resonance = Math.min(100, Math.max(0, el.resonance + interaction));
+              toEl.resonance = Math.min(100, Math.max(0, toEl.resonance + interaction));
+            }
+          }
+        });
+      });
+      displayElements(elements);
+      document.getElementById("output").innerHTML += `<br>🧠 Нейронний зв’язок створено!`;
+    }
+
     // Resonance singularity
     function generateSingularity() {
       if (!running || elements.length < 2) return alert("Потрібно щонайменше 2 елементи для сингулярності!");
@@ -419,23 +486,6 @@
       document.getElementById("output").innerHTML += `<br>🌐 Фрактал створено: ${fractal.name}`;
     }
 
-    // Resonance cascade
-    function generateCascade() {
-      if (!running || connections.length < 1) return alert("Потрібно щонайменше 1 зв’язок для каскаду!");
-      elements.forEach(el => {
-        connections.forEach(conn => {
-          if (conn.from === el.name) {
-            const toEl = elements.find(e => e.name === conn.to);
-            if (toEl) {
-              toEl.resonance = Math.min(100, toEl.resonance + el.resonance * (conn.weight || 0.5) * 0.2);
-            }
-          }
-        });
-      });
-      displayElements(elements);
-      document.getElementById("output").innerHTML += `<br>🌊 Резонансний каскад запущено!`;
-    }
-
     // Element editor
     function addElement() {
       const name = document.getElementById("elementName").value;
@@ -467,7 +517,7 @@
       const customPost = document.getElementById("fediverse-post").value;
       const schedule = document.getElementById("fediverse-schedule").value;
       const message = customPost || `🌌 Новий момент у Resonance Hub: ${lastMoment.elements.length} елементів резонують на ${lastMoment.elements.reduce((sum, el) => sum + el.resonance, 0).toFixed(1)}%!\n#Resonance #Spark #oQs`;
-      document.getElementById("fediverse-preview").innerHTML = `<div>Попередній перегляд: ${message}</div>`;
+      document.getElementById("fediverse-preview").innerHTML = `<div>Попередній перегляд: ${message}<br>Реакції (заглушка): ${Math.floor(Math.random() * 20)} лайків, ${Math.floor(Math.random() * 10)} репостів, ${Math.floor(Math.random() * 5)} коментарів</div>`;
       try {
         const postData = {
           status: message,
