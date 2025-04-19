@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0c0c0c">
-  <title>🌌 Resonance Hub ∞ v15</title>
+  <title>🌌 Resonance Hub ∞ v16</title>
   <style>
     body {
       background: #0c0c0c;
@@ -36,7 +36,7 @@
       margin: 20px auto;
       border: 1px solid #555;
       background: #000;
-      animation: pulse 6s infinite;
+      animation: pulse 6s infinite, glitch 8s infinite;
     }
     button, input, select, textarea {
       background: #1a1a1a;
@@ -149,8 +149,8 @@
 </head>
 <body>
   <canvas id="matrix"></canvas>
-  <h1>🌌 Resonance Hub ∞ v15</h1>
-  <p>Голографічний пульсуючий каскад — твори, резонуй, об’єднуй вічність!</p>
+  <h1>🌌 Resonance Hub ∞ v16</h1>
+  <p>Вихровий голографічний каскад — твори, резонуй, об’єднуй вічність!</p>
 
   <div id="scroll-buttons">
     <button class="scroll-button" onclick="scrollToTop()">🔼</button>
@@ -214,6 +214,7 @@
     <button onclick="generatePulse()">💥 Запустити імпульс</button>
     <button onclick="generateFlare()">✨ Запустити спалах</button>
     <button onclick="generateHologram()">🌠 Запустити голограму</button>
+    <button onclick="generateVortex()">🌀 Запустити вихор</button>
     <button onclick="generateLinePulse()">🌌 Пульсація ліній</button>
     <button onclick="showPostHistory()">📜 Історія постів</button>
     <select id="fediverse-instance">
@@ -259,7 +260,7 @@
         drops[i]++;
       });
     }
-    setInterval(drawMatrix, 50);
+    setInterval(drawMatrix, 33); // Прискорено на 50%
 
     // Scroll functions
     function scrollToBottom() {
@@ -273,7 +274,7 @@
     const vizCanvas = document.getElementById("viz");
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, vizCanvas.width / vizCanvas.height, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ canvas: vizCanvas });
+    const renderer = new THREE.WebGLRenderer({ canvas: vizCanvas, antialias: true });
     renderer.setSize(vizCanvas.width, vizCanvas.height);
     camera.position.z = 50;
     let elements = [];
@@ -286,11 +287,15 @@
     let impulsePhase = 0;
     let flarePhase = 0;
     let hologramPhase = 0;
+    let vortexPhase = 0;
     let linePulsePhase = 0;
-    const sphereGeo = new THREE.SphereGeometry(14.5, 16, 16);
-    const coreGeo = new THREE.SphereGeometry(78, 64, 64);
+    let corePulsePhase = 0;
+    const sphereGeo = new THREE.SphereGeometry(14.8, 16, 16);
+    const coreGeo = new THREE.SphereGeometry(80, 64, 64);
     const coreMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.9 });
     const lineMat = new THREE.LineBasicMaterial({ color: 0x00ffff, opacity: 0.3, transparent: true });
+    const trailGeo = new THREE.SphereGeometry(2, 8, 8);
+    const trailMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.2 });
 
     function getColor(resonance) {
       const t = Math.min(Math.max(resonance / 100, 0), 1);
@@ -302,12 +307,16 @@
     function drawHarmony() {
       if (!running) return;
       scene.children.forEach(child => scene.remove(child));
+      const coreScale = 1 + 0.1 * Math.sin(corePulsePhase);
       const core = new THREE.Mesh(coreGeo, coreMat);
+      core.scale.set(coreScale, coreScale, coreScale);
       scene.add(core);
+      const trails = [];
       elements.forEach((el, i) => {
-        const scale = 1 + 0.2 * Math.sin(pulsePhase + i) + 0.3 * Math.exp(-impulsePhase);
+        const scale = 1 + 0.3 * Math.sin(pulsePhase + i) + 0.45 * Math.exp(-impulsePhase);
         const flare = flarePhase > 0 ? 1.5 * Math.sin(flarePhase) : 1;
         const hologram = hologramPhase > 0 ? 0.5 * Math.sin(hologramPhase) : 0;
+        const vortex = vortexPhase > 0 ? 10 * Math.sin(vortexPhase + i) : 0;
         const sphere = new THREE.Mesh(sphereGeo, new THREE.MeshBasicMaterial({ 
           color: getColor(el.resonance), 
           transparent: true, 
@@ -318,7 +327,7 @@
         let animColor = getColor(el.resonance);
         animations.forEach(anim => {
           if (anim.type === "scale") {
-            animScale *= 1 + 0.2 * Math.sin(anim.speed * pulsePhase);
+            animScale *= 1 + 0.3 * Math.sin(anim.speed * pulsePhase);
           } else if (anim.type === "rotate") {
             animRotation += anim.speed * pulsePhase;
           } else if (anim.type === "color") {
@@ -327,34 +336,48 @@
         });
         sphere.scale.set(animScale, animScale, animScale);
         const angle = (i / elements.length) * 2 * Math.PI;
-        const radius = 136 + (el.resonance || 0) / 10;
-        sphere.position.set(radius * Math.cos(angle + animRotation), radius * Math.sin(angle + animRotation), Math.sin(i) * 5);
+        const radius = 138 + (el.resonance || 0) / 10 + vortex;
+        const posX = radius * Math.cos(angle + animRotation);
+        const posY = radius * Math.sin(angle + animRotation);
+        const posZ = Math.sin(i) * 5;
+        sphere.position.set(posX, posY, posZ);
         sphere.userData = el;
         scene.add(sphere);
+        // Neon trail
+        const trail = new THREE.Mesh(trailGeo, trailMat);
+        trail.position.set(posX, posY, posZ);
+        trail.scale.set(animScale * 0.5, animScale * 0.5, animScale * 0.5);
+        trails.push(trail);
         connections.forEach(conn => {
           if (conn.from === el.name) {
             const toEl = elements.find(e => e.name === conn.to);
             if (toEl) {
               const toIndex = elements.indexOf(toEl);
               const toAngle = (toIndex / elements.length) * 2 * Math.PI;
-              const toRadius = 136 + (toEl.resonance || 0) / 10;
+              const toRadius = 138 + (toEl.resonance || 0) / 10 + vortex;
               const toPos = new THREE.Vector3(toRadius * Math.cos(toAngle + animRotation), toRadius * Math.sin(toAngle + animRotation), Math.sin(toIndex) * 5);
-              const lineOpacity = (conn.weight || 0.3) * (1 + 0.2 * Math.sin(linePulsePhase));
+              const lineOpacity = (conn.weight || 0.3) * (1 + 0.3 * Math.sin(linePulsePhase));
               const connMat = new THREE.LineBasicMaterial({ color: 0x00ffff, opacity: lineOpacity, transparent: true });
               scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([sphere.position, toPos]), connMat));
             }
           }
         });
       });
-      rotation += 0.6;
-      pulsePhase += 0.05;
-      impulsePhase = Math.max(0, impulsePhase - 0.1);
-      flarePhase = Math.max(0, flarePhase - 0.1);
-      hologramPhase = Math.max(0, hologramPhase - 0.1);
-      linePulsePhase += 0.1;
+      trails.forEach((trail, i) => {
+        trail.material.opacity = 0.2 * (1 - i / trails.length);
+        scene.add(trail);
+      });
+      rotation += 0.9; // Прискорено на 50%
+      pulsePhase += 0.075; // Прискорено на 50%
+      impulsePhase = Math.max(0, impulsePhase - 0.15); // Прискорено на 50%
+      flarePhase = Math.max(0, flarePhase - 0.15); // Прискорено на 50%
+      hologramPhase = Math.max(0, hologramPhase - 0.15); // Прискорено на 50%
+      vortexPhase = Math.max(0, vortexPhase - 0.15); // Прискорено на 50%
+      linePulsePhase += 0.15; // Прискорено на 50%
+      corePulsePhase += 0.075; // Прискорено на 50%
       renderer.render(scene, camera);
     }
-    setInterval(drawHarmony, 16);
+    setInterval(drawHarmony, 10); // Прискорено на 50%
 
     // Mouse interaction
     vizCanvas.addEventListener('click', (event) => {
@@ -404,13 +427,13 @@
           }
         });
       });
-      graphRotation += 0.02;
+      graphRotation += 0.03; // Прискорено на 50%
       graphCamera.position.x = 100 * Math.sin(graphRotation);
       graphCamera.position.z = 100 * Math.cos(graphRotation);
       graphCamera.lookAt(0, 0, 0);
       graphRenderer.render(graphScene, graphCamera);
     }
-    setInterval(drawHarmonyGraph, 16);
+    setInterval(drawHarmonyGraph, 10); // Прискорено на 50%
 
     // Timeline
     let timelineItems = [];
@@ -493,6 +516,13 @@
       if (!running) return alert("Спочатку запусти гармонію!");
       hologramPhase = Math.PI;
       document.getElementById("output").innerHTML += `<br>🌠 Резонансна голограма запущена!`;
+    }
+
+    // Resonance vortex
+    function generateVortex() {
+      if (!running) return alert("Спочатку запусти гармонію!");
+      vortexPhase = Math.PI;
+      document.getElementById("output").innerHTML += `<br>🌀 Резонансний вихор запущено!`;
     }
 
     // Resonance line pulse
@@ -608,7 +638,9 @@
         const key = localStorage.key(i);
         if (key.startsWith("fediverse_post_")) {
           const post = JSON.parse(localStorage.getItem(key));
-          output += `<div>🕒 ${post.timestamp}: ${post.status}<br>Реакції: ${Math.floor(Math.random() * 20)} лайків, ${Math.floor(Math.random() * 10)} репостів, ${Math.floor(Math.random() * 5)} коментарів</div>`;
+          output += `<div>🕒 ${post.timestamp}: ${post.status}<br>`;
+          if (post.image) output += `<img src="${post.image}" style="max-width: 200px;"><br>`;
+          output += `Реакції: ${Math.floor(Math.random() * 20)} лайків, ${Math.floor(Math.random() * 10)} репостів, ${Math.floor(Math.random() * 5)} коментарів</div>`;
         }
       }
       document.getElementById("output").innerHTML += output;
