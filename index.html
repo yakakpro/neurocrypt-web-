@@ -162,10 +162,15 @@
       0%, 100% { transform: translate(0); }
       50% { transform: translate(0.3px, -0.3px); }
     }
+    @keyframes spin {
+      from { transform: translateX(-50%) rotate(0deg); }
+      to { transform: translateX(-50%) rotate(360deg); }
+    }
   </style>
 </head>
 <body>
   <h1 class="glow">∞CRYNZA∞</h1>
+  <div style="position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 2rem; animation: spin 4s linear infinite; text-shadow: 0 0 10px #00ffcc, 0 0 20px #ff00ff;">🌀</div>
   <div class="quantum">Квантово-стійкий матрикс: SIDH/BIKE/McEliece/Kyber/Dilithium</div>
 
   <div class="container">
