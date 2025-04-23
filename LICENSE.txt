@@ -35,4 +35,24 @@ By using this software, you affirm that you:
 
 **Created by:** The Neurocipher Project  
 **Version:** 1.0 – April 2025  
+**License URL:** [Link to raw license file in your GitHub repo]
+
+---
+
+### 🌍 GitHub License Description (English)
+
+> The Fair Source Human Freedom License (FSHFL) is designed to keep privacy-first tools accessible to individuals while preventing large-scale exploitation by corporate, governmental, or militarized actors.
+
+**You can use this software if you are:**
+- An individual, student, educator, or activist;
+- A small team or collective under 10 people;
+- Using it non-commercially to protect communication and expression.
+
+**You cannot use this software if you represent:**
+- A company with 10+ employees or >$500,000 annual revenue;
+- A state or military organization;
+- A corporate AI or surveillance-related entity.
+
+**This license is about integrity, not profit.**  
+It keeps the code clean, the intention clear, and the power in the hands of the people.
 
